@@ -83,5 +83,6 @@
             }
         }
     ],
-    "privileges": []
+    "privileges": [],
+    "supportsLandingPage": true
 }
