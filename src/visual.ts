@@ -97,7 +97,7 @@ export class Visual implements IVisual {
             }
 
             const bins = this.computeBins(values);
-            this.renderHistogram(bins, width, height);
+            this.renderHistogram(bins, values, width, height);
 
             this.events.renderingFinished(options);
         }
@@ -163,7 +163,7 @@ export class Visual implements IVisual {
         }));
     }
 
-    private renderHistogram(bins: Bin[], width: number, height: number): void {
+    private renderHistogram(bins: Bin[], values: number[], width: number, height: number): void {
         const margin = { top: 12, right: 16, bottom: 36, left: 44 };
         const innerW = Math.max(0, width - margin.left - margin.right);
         const innerH = Math.max(0, height - margin.top - margin.bottom);
@@ -174,10 +174,20 @@ export class Visual implements IVisual {
         const xAxisCard = this.formattingSettings.xAxis;
         const yAxisCard = this.formattingSettings.yAxis;
 
+        const stats = this.computeStats(values);
+        const showCurve = this.formattingSettings.normalCurve.show.value && stats.sd > 0;
+
         const x0 = bins[0].x0;
         const x1 = bins[bins.length - 1].x1;
         const xScale = d3.scaleLinear().domain([x0, x1]).range([0, innerW]);
-        const yMax = d3.max(bins, b => b.count) || 0;
+
+        const binCountMax = d3.max(bins, b => b.count) || 0;
+        // Extend y-domain to fit the normal-curve peak so it isn't clipped
+        const binWidth = bins[0].x1 - bins[0].x0;
+        const curvePeak = showCurve
+            ? (1 / (stats.sd * Math.sqrt(2 * Math.PI))) * values.length * binWidth
+            : 0;
+        const yMax = Math.max(binCountMax, curvePeak);
         const yScale = d3.scaleLinear().domain([0, yMax]).nice().range([innerH, 0]);
 
         const g = this.svg.append("g")
@@ -218,13 +228,120 @@ export class Visual implements IVisual {
 
         // Y axis
         if (yAxisCard.show.value) {
-            const yAxis = d3.axisLeft(yScale).ticks(Math.min(yMax, 8));
+            const yAxis = d3.axisLeft(yScale).ticks(Math.min(binCountMax, 8));
             const yAxisG = g.append("g").call(yAxis);
             const yColor = isHC ? colors.foreground : yAxisCard.labelColor.value.value;
             yAxisG.selectAll("text")
                 .attr("fill", yColor)
                 .attr("font-size", `${yAxisCard.fontSize.value}px`);
             yAxisG.selectAll("path, line").attr("stroke", yColor);
+        }
+
+        // Normal curve overlay (paid)
+        if (showCurve) {
+            this.drawNormalCurve(g, stats, values.length, bins, xScale, yScale, innerH, isHC, colors.foreground);
+        }
+
+        // Spec limits + Cp/Cpk (paid)
+        if (this.formattingSettings.specLimits.show.value) {
+            this.drawSpecLimits(g, stats, xScale, innerW, innerH, isHC, colors.foreground);
+        }
+    }
+
+    private computeStats(values: number[]): { mean: number; sd: number } {
+        const mean = d3.mean(values) ?? 0;
+        const variance = values.length > 1
+            ? d3.sum(values, v => (v - mean) ** 2) / (values.length - 1)
+            : 0;
+        return { mean, sd: Math.sqrt(variance) };
+    }
+
+    private drawNormalCurve(
+        g: d3.Selection<SVGGElement, unknown, null, undefined>,
+        stats: { mean: number; sd: number },
+        n: number,
+        bins: Bin[],
+        xScale: d3.ScaleLinear<number, number>,
+        yScale: d3.ScaleLinear<number, number>,
+        innerH: number,
+        isHC: boolean,
+        hcColor: string
+    ): void {
+        const card = this.formattingSettings.normalCurve;
+        const binWidth = bins[0].x1 - bins[0].x0;
+        const [d0, d1] = xScale.domain();
+        const steps = 100;
+        const pdf = (x: number) =>
+            (1 / (stats.sd * Math.sqrt(2 * Math.PI))) * Math.exp(-0.5 * ((x - stats.mean) / stats.sd) ** 2);
+
+        const points: [number, number][] = d3.range(steps + 1).map(i => {
+            const x = d0 + (d1 - d0) * (i / steps);
+            const expectedCount = pdf(x) * n * binWidth;
+            return [xScale(x), yScale(expectedCount)];
+        });
+
+        const line = d3.line<[number, number]>().x(p => p[0]).y(p => p[1]).curve(d3.curveBasis);
+
+        g.append("path")
+            .datum(points)
+            .attr("fill", "none")
+            .attr("stroke", isHC ? hcColor : card.color.value.value)
+            .attr("stroke-width", card.strokeWidth.value)
+            .attr("d", line);
+    }
+
+    private drawSpecLimits(
+        g: d3.Selection<SVGGElement, unknown, null, undefined>,
+        stats: { mean: number; sd: number },
+        xScale: d3.ScaleLinear<number, number>,
+        innerW: number,
+        innerH: number,
+        isHC: boolean,
+        hcColor: string
+    ): void {
+        const card = this.formattingSettings.specLimits;
+        const color = isHC ? hcColor : card.color.value.value;
+        const [d0, d1] = xScale.domain();
+
+        const drawLine = (value: number, label: string) => {
+            if (value < d0 || value > d1) {
+                return;
+            }
+            const x = xScale(value);
+            g.append("line")
+                .attr("x1", x).attr("x2", x)
+                .attr("y1", 0).attr("y2", innerH)
+                .attr("stroke", color)
+                .attr("stroke-width", 2)
+                .attr("stroke-dasharray", "4,3");
+            g.append("text")
+                .attr("x", x).attr("y", 10)
+                .attr("text-anchor", "middle")
+                .attr("fill", color)
+                .attr("font-size", "11px")
+                .text(label);
+        };
+
+        drawLine(card.lsl.value, "LSL");
+        drawLine(card.usl.value, "USL");
+
+        // Cp / Cpk readout
+        if (card.showCpk.value && stats.sd > 0) {
+            const lsl = card.lsl.value;
+            const usl = card.usl.value;
+            const cp = (usl - lsl) / (6 * stats.sd);
+            const cpu = (usl - stats.mean) / (3 * stats.sd);
+            const cpl = (stats.mean - lsl) / (3 * stats.sd);
+            const cpk = Math.min(cpu, cpl);
+
+            g.append("text")
+                .attr("x", innerW - 4)
+                .attr("y", innerH - 6)
+                .attr("text-anchor", "end")
+                .attr("fill", color)
+                .attr("font-size", "12px")
+                .attr("font-weight", "bold")
+                .text(`Cp ${cp.toFixed(2)}  Cpk ${cpk.toFixed(2)}`);
         }
     }
 

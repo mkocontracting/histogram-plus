@@ -69,8 +69,15 @@ const colMeta = {
 };
 
 // categorical dataView — values as categories (Grouping role, raw rows)
+// objects: enable paid overlays for visual verification in harness
 const dataView = {
-  metadata:{ columns:[colMeta] },
+  metadata:{
+    columns:[colMeta],
+    objects:{
+      normalCurve:{ show:true },
+      specLimits:{ show:true, lsl:42, usl:60, showCpk:true }
+    }
+  },
   categorical:{
     categories:[{
       source: colMeta,
