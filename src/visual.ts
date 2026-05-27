@@ -32,12 +32,16 @@ import "./../style/visual.less";
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
 import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
 import IVisual = powerbi.extensibility.visual.IVisual;
+import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 import IVisualEventService = powerbi.extensibility.IVisualEventService;
+import ISelectionManager = powerbi.extensibility.ISelectionManager;
 
 import { VisualFormattingSettingsModel } from "./settings";
 
 export class Visual implements IVisual {
+    private host: IVisualHost;
     private events: IVisualEventService;
+    private selectionManager: ISelectionManager;
     private target: HTMLElement;
     private updateCount: number;
     private textNode: Text;
@@ -46,9 +50,16 @@ export class Visual implements IVisual {
 
     constructor(options: VisualConstructorOptions) {
         console.log('Visual constructor', options);
+        this.host = options.host;
         this.events = options.host.eventService;
+        this.selectionManager = options.host.createSelectionManager();
         this.formattingSettingsService = new FormattingSettingsService();
         this.target = options.element;
+        this.target.addEventListener("contextmenu", (e: MouseEvent) => {
+            this.selectionManager.showContextMenu({}, { x: e.clientX, y: e.clientY });
+            e.preventDefault();
+        });
+
         this.updateCount = 0;
         if (document) {
             const new_p: HTMLElement = document.createElement("p");
@@ -65,7 +76,16 @@ export class Visual implements IVisual {
         this.events.renderingStarted(options);
 
         try {
-            this.formattingSettings = this.formattingSettingsService.populateFormattingSettingsModel(VisualFormattingSettingsModel, options.dataViews[0]);
+            const dataView = options.dataViews?.[0];
+
+            if (dataView?.metadata?.segment) {
+                const accepted = this.host.fetchMoreData(true);
+                if (!accepted) {
+                    // 100 MB limit reached — render with accumulated data as-is
+                }
+            }
+
+            this.formattingSettings = this.formattingSettingsService.populateFormattingSettingsModel(VisualFormattingSettingsModel, dataView);
 
             console.log('Visual update', options);
             if (this.textNode) {
@@ -86,5 +106,22 @@ export class Visual implements IVisual {
      */
     public getFormattingModel(): powerbi.visuals.FormattingModel {
         return this.formattingSettingsService.buildFormattingModel(this.formattingSettings);
+    }
+
+    protected getHighContrastColors(): { foreground: string; background: string; selected: string } {
+        const p = this.host.colorPalette;
+        if (p.isHighContrast) {
+            return {
+                foreground: (p.foreground as powerbi.IColorInfo).value,
+                background: (p.background as powerbi.IColorInfo).value,
+                selected:   (p.foregroundSelected as powerbi.IColorInfo).value,
+            };
+        }
+        const s = this.formattingSettings?.bars;
+        return {
+            foreground: s?.fill?.value?.value ?? "#01B8AA",
+            background: "#ffffff",
+            selected:   "#000000",
+        };
     }
 }
