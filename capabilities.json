@@ -1,0 +1,80 @@
+{
+    "dataRoles": [
+        {
+            "displayName": "Values",
+            "name": "values",
+            "kind": "GroupingOrMeasure",
+            "description": "Numeric column or measure — individual values used for binning"
+        }
+    ],
+    "objects": {
+        "bins": {
+            "properties": {
+                "mode": {
+                    "type": { "enumeration": [
+                        { "value": "auto",  "displayName": "Auto (Sturges)" },
+                        { "value": "count", "displayName": "Number of bins" },
+                        { "value": "width", "displayName": "Bin width" }
+                    ]}
+                },
+                "count": { "type": { "numeric": true } },
+                "width":  { "type": { "numeric": true } }
+            }
+        },
+        "bars": {
+            "properties": {
+                "fill":        { "type": { "fill": { "solid": { "color": true } } } },
+                "fillOpacity": { "type": { "numeric": true } },
+                "stroke":      { "type": { "fill": { "solid": { "color": true } } } }
+            }
+        },
+        "normalCurve": {
+            "properties": {
+                "show":        { "type": { "bool": true } },
+                "color":       { "type": { "fill": { "solid": { "color": true } } } },
+                "strokeWidth": { "type": { "numeric": true } }
+            }
+        },
+        "specLimits": {
+            "properties": {
+                "show":    { "type": { "bool": true } },
+                "lsl":     { "type": { "numeric": true } },
+                "usl":     { "type": { "numeric": true } },
+                "color":   { "type": { "fill": { "solid": { "color": true } } } },
+                "showCpk": { "type": { "bool": true } }
+            }
+        },
+        "xAxis": {
+            "properties": {
+                "show":       { "type": { "bool": true } },
+                "labelColor": { "type": { "fill": { "solid": { "color": true } } } },
+                "fontSize":   { "type": { "formatting": { "fontSize": true } } }
+            }
+        },
+        "yAxis": {
+            "properties": {
+                "show":       { "type": { "bool": true } },
+                "labelColor": { "type": { "fill": { "solid": { "color": true } } } },
+                "fontSize":   { "type": { "formatting": { "fontSize": true } } }
+            }
+        }
+    },
+    "dataViewMappings": [
+        {
+            "conditions": [
+                { "values": { "max": 1 } }
+            ],
+            "table": {
+                "rows": {
+                    "select": [
+                        { "for": { "in": "values" } }
+                    ],
+                    "dataReductionAlgorithm": {
+                        "sample": { "count": 10000 }
+                    }
+                }
+            }
+        }
+    ],
+    "privileges": []
+}
