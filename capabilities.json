@@ -84,5 +84,6 @@
         }
     ],
     "privileges": [],
-    "supportsLandingPage": true
+    "supportsLandingPage": true,
+    "supportsEmptyDataView": true
 }
