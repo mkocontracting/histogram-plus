@@ -85,6 +85,11 @@ export class Visual implements IVisual {
     public update(options: VisualUpdateOptions) {
         this.events.renderingStarted(options);
 
+        const width = options.viewport?.width ?? 0;
+        const height = options.viewport?.height ?? 0;
+        this.svg.attr("width", width).attr("height", height);
+        this.svg.selectAll("*").remove();
+
         try {
             const dataView = options.dataViews?.[0];
 
@@ -92,12 +97,10 @@ export class Visual implements IVisual {
                 this.host.fetchMoreData(true);
             }
 
-            this.formattingSettings = this.formattingSettingsService.populateFormattingSettingsModel(VisualFormattingSettingsModel, dataView);
-
-            const width = options.viewport.width;
-            const height = options.viewport.height;
-            this.svg.attr("width", width).attr("height", height);
-            this.svg.selectAll("*").remove();
+            this.formattingSettings = this.formattingSettingsService.populateFormattingSettingsModel(
+                VisualFormattingSettingsModel,
+                dataView ?? ({ metadata: { columns: [] } } as DataView)
+            );
 
             const data = this.extractData(dataView);
             if (data.values.length === 0) {
@@ -112,6 +115,9 @@ export class Visual implements IVisual {
             this.events.renderingFinished(options);
         }
         catch (error) {
+            // Even on failure, show guidance instead of a blank visual
+            this.svg.selectAll("*").remove();
+            this.renderEmptyState(width, height);
             this.events.renderingFailed(options, String(error));
         }
     }
