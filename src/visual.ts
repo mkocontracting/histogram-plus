@@ -63,7 +63,6 @@ export class Visual implements IVisual {
     private tooltipServiceWrapper: ITooltipServiceWrapper;
     private formattingSettings: VisualFormattingSettingsModel;
     private formattingSettingsService: FormattingSettingsService;
-    private landingPage: HTMLElement | null = null;
 
     constructor(options: VisualConstructorOptions) {
         this.host = options.host;
@@ -101,18 +100,17 @@ export class Visual implements IVisual {
 
         const data = this.extractData(dataView);
 
-        // Empty → show landing page (created once), keep the chart SVG hidden.
+        // Keep the SVG as the single, always-interactive surface (mirrors the
+        // data state, which Power BI lets the user select/drag/delete normally).
+        this.svg.attr("width", width).attr("height", height);
+        this.svg.selectAll("*").remove();
+
+        // Empty → draw the landing page inside the SVG (valid state, never fails).
         if (data.values.length === 0) {
-            this.showLandingPage();
-            this.svg.style("display", "none");
+            this.renderLandingPage(width, height);
             this.events.renderingFinished(options);
             return;
         }
-
-        this.removeLandingPage();
-        this.svg.style("display", null);
-        this.svg.attr("width", width).attr("height", height);
-        this.svg.selectAll("*").remove();
 
         try {
             if (dataView?.metadata?.segment) {
@@ -418,52 +416,33 @@ export class Visual implements IVisual {
         }
     }
 
-    // Landing page is created once (per MS supportsLandingPage pattern) and
-    // removed when data arrives — never re-rendered on every update.
-    private showLandingPage(): void {
-        if (this.landingPage) {
-            return;
-        }
+    // Landing page is drawn inside the SVG (same surface as the chart) so the
+    // empty visual stays selectable/draggable like the data state.
+    private renderLandingPage(width: number, height: number): void {
         const isHC = this.host.colorPalette.isHighContrast;
         const fg = isHC ? this.getHighContrastColors().foreground : "#666666";
         const body = isHC ? this.getHighContrastColors().foreground : "#999999";
 
-        const page = document.createElement("div");
-        page.className = "landing-page";
-
-        const title = document.createElement("div");
-        title.className = "landing-title";
-        title.style.color = fg;
-        title.textContent = "Histogram+";
-        page.appendChild(title);
-
-        const lines = [
-            "1. Drag a numeric column to the Values field.",
-            "2. For data with repeated values, drag the same column to Frequency and set it to Count.",
-            "Continuous data needs only the Values field.",
+        const lines: { text: string; size: number; color: string; dy: number }[] = [
+            { text: "Histogram+", size: 16, color: fg, dy: 0 },
+            { text: "1. Drag a numeric column to the Values field.", size: 12, color: body, dy: 30 },
+            { text: "2. For data with repeated values, drag the same", size: 12, color: body, dy: 20 },
+            { text: "    column to Frequency and set it to Count.", size: 12, color: body, dy: 16 },
+            { text: "(Continuous data needs only the Values field.)", size: 11, color: body, dy: 24 },
+            { text: "build 1.0.0.3", size: 9, color: body, dy: 22 },
         ];
-        for (const text of lines) {
-            const p = document.createElement("div");
-            p.className = "landing-line";
-            p.style.color = body;
-            p.textContent = text;
-            page.appendChild(p);
-        }
 
-        const build = document.createElement("div");
-        build.className = "landing-build";
-        build.style.color = body;
-        build.textContent = "build 1.0.0.2";
-        page.appendChild(build);
-
-        this.target.appendChild(page);
-        this.landingPage = page;
-    }
-
-    private removeLandingPage(): void {
-        if (this.landingPage) {
-            this.landingPage.remove();
-            this.landingPage = null;
+        const totalH = lines.reduce((a, l) => a + l.dy, 0);
+        let y = height / 2 - totalH / 2;
+        for (const line of lines) {
+            y += line.dy;
+            this.svg.append("text")
+                .attr("x", width / 2)
+                .attr("y", y)
+                .attr("text-anchor", "middle")
+                .attr("fill", line.color)
+                .attr("font-size", `${line.size}px`)
+                .text(line.text);
         }
     }
 
