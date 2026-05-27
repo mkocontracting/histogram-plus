@@ -90,32 +90,34 @@ export class Visual implements IVisual {
         this.svg.attr("width", width).attr("height", height);
         this.svg.selectAll("*").remove();
 
+        const dataView = options.dataViews?.[0];
+
+        // Always populate settings (format pane needs it), tolerating no data view.
         try {
-            const dataView = options.dataViews?.[0];
-
-            if (dataView?.metadata?.segment) {
-                this.host.fetchMoreData(true);
-            }
-
             this.formattingSettings = this.formattingSettingsService.populateFormattingSettingsModel(
                 VisualFormattingSettingsModel,
                 dataView ?? ({ metadata: { columns: [] } } as DataView)
             );
+        } catch { /* keep previous settings */ }
 
-            const data = this.extractData(dataView);
-            if (data.values.length === 0) {
-                this.renderEmptyState(width, height);
-                this.events.renderingFinished(options);
-                return;
+        const data = this.extractData(dataView);
+
+        // Empty / landing page is a valid state — finish normally, never fail.
+        if (data.values.length === 0) {
+            this.renderEmptyState(width, height);
+            this.events.renderingFinished(options);
+            return;
+        }
+
+        try {
+            if (dataView?.metadata?.segment) {
+                this.host.fetchMoreData(true);
             }
-
             const bins = this.computeBins(data);
             this.renderHistogram(bins, data, width, height);
-
             this.events.renderingFinished(options);
         }
         catch (error) {
-            // Even on failure, show guidance instead of a blank visual
             this.svg.selectAll("*").remove();
             this.renderEmptyState(width, height);
             this.events.renderingFailed(options, String(error));
