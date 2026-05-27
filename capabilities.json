@@ -4,7 +4,13 @@
             "displayName": "Values",
             "name": "values",
             "kind": "Grouping",
-            "description": "Numeric column to build the histogram from (use a column, not a measure)"
+            "description": "Numeric column to build the histogram from. Power BI returns distinct values; for data with repeats add the same column to Frequency as a Count."
+        },
+        {
+            "displayName": "Frequency",
+            "name": "frequency",
+            "kind": "Measure",
+            "description": "Optional. Count (or weight) per value. Drag your value column here set to Count to histogram data with repeated values. Leave empty for continuous data."
         }
     ],
     "objects": {
@@ -62,7 +68,7 @@
     "dataViewMappings": [
         {
             "conditions": [
-                { "values": { "min": 1, "max": 1 } }
+                { "values": { "min": 1, "max": 1 }, "frequency": { "min": 0, "max": 1 } }
             ],
             "categorical": {
                 "categories": {
@@ -70,6 +76,9 @@
                     "dataReductionAlgorithm": {
                         "window": { "count": 30000 }
                     }
+                },
+                "values": {
+                    "for": { "in": "frequency" }
                 }
             }
         }

@@ -70,13 +70,21 @@ const colMeta = {
 
 // Edge-case test override: set TEST_VALUES to an array (or [] for empty) to swap sample data.
 const TEST_VALUES = null;
+// Frequency test: set TEST_FREQ to a parallel array to simulate Power BI's
+// distinct-values + Count-measure delivery (the fidelity path).
+const TEST_FREQ = null;
 const data = TEST_VALUES || rawValues;
 
-// categorical dataView — values as categories (Grouping role, raw rows)
+const freqMeta = {
+  displayName:'Frequency', queryName:'frequency',
+  roles:{ frequency:true }, type:{ numeric:true }, index:1, isMeasure:true
+};
+
+// categorical dataView — values as categories (Grouping role)
 // objects: enable paid overlays for visual verification in harness
 const dataView = {
   metadata:{
-    columns:[colMeta],
+    columns: TEST_FREQ ? [colMeta, freqMeta] : [colMeta],
     objects:{
       normalCurve:{ show:true },
       specLimits:{ show:true, lsl:42, usl:60, showCpk:true }
@@ -89,7 +97,9 @@ const dataView = {
       identity: data.map((_,i)=>({key:String(i)})),
       identityFields:[]
     }],
-    values: Object.assign([], { grouped:()=>[] })
+    values: TEST_FREQ
+      ? Object.assign([{ source:freqMeta, values:TEST_FREQ }], { grouped:()=>[] })
+      : Object.assign([], { grouped:()=>[] })
   }
 };
 

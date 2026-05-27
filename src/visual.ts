@@ -47,6 +47,12 @@ interface Bin {
     count: number;
 }
 
+interface HistogramData {
+    values: number[];   // distinct (or raw) numeric values
+    weights: number[];  // frequency per value (1 when no Frequency measure)
+    total: number;      // sum of weights = total observations
+}
+
 export class Visual implements IVisual {
     private host: IVisualHost;
     private events: IVisualEventService;
@@ -92,15 +98,15 @@ export class Visual implements IVisual {
             this.svg.attr("width", width).attr("height", height);
             this.svg.selectAll("*").remove();
 
-            const values = this.extractValues(dataView);
-            if (values.length === 0) {
+            const data = this.extractData(dataView);
+            if (data.values.length === 0) {
                 this.renderEmptyState(width, height);
                 this.events.renderingFinished(options);
                 return;
             }
 
-            const bins = this.computeBins(values);
-            this.renderHistogram(bins, values, width, height);
+            const bins = this.computeBins(data);
+            this.renderHistogram(bins, data, width, height);
 
             this.events.renderingFinished(options);
         }
@@ -109,29 +115,45 @@ export class Visual implements IVisual {
         }
     }
 
-    private extractValues(dataView: DataView | undefined): number[] {
+    private extractData(dataView: DataView | undefined): HistogramData {
         const category = dataView?.categorical?.categories?.[0];
         if (!category?.values) {
-            return [];
+            return { values: [], weights: [], total: 0 };
         }
-        const result: number[] = [];
-        for (const v of category.values) {
-            const n = typeof v === "number" ? v : Number(v);
-            if (v !== null && v !== undefined && Number.isFinite(n)) {
-                result.push(n);
+        // Power BI groups the category to distinct values; the optional Frequency
+        // measure carries the count per value so repeated data bins correctly.
+        const freqColumn = dataView?.categorical?.values?.[0];
+        const values: number[] = [];
+        const weights: number[] = [];
+        for (let i = 0; i < category.values.length; i++) {
+            const raw = category.values[i];
+            const n = typeof raw === "number" ? raw : Number(raw);
+            if (raw === null || raw === undefined || !Number.isFinite(n)) {
+                continue;
+            }
+            let w = 1;
+            if (freqColumn) {
+                const f = Number(freqColumn.values[i]);
+                w = Number.isFinite(f) && f > 0 ? f : 0;
+            }
+            if (w > 0) {
+                values.push(n);
+                weights.push(w);
             }
         }
-        return result;
+        const total = weights.reduce((a, b) => a + b, 0);
+        return { values, weights, total };
     }
 
-    private computeBins(values: number[]): Bin[] {
+    private computeBins(data: HistogramData): Bin[] {
+        const { values, weights, total } = data;
         const min = d3.min(values)!;
         const max = d3.max(values)!;
 
         // All values equal → single centered bin with a display width so it renders
         if (min === max) {
             const halfWidth = min !== 0 ? Math.abs(min) * 0.05 : 0.5;
-            return [{ x0: min - halfWidth, x1: min + halfWidth, count: values.length }];
+            return [{ x0: min - halfWidth, x1: min + halfWidth, count: total }];
         }
 
         const binsCard = this.formattingSettings.bins;
@@ -150,25 +172,25 @@ export class Visual implements IVisual {
             domainMax = min + nBins * w;
             thresholds = d3.range(1, nBins).map(i => min + i * w);
         } else {
-            // auto — Sturges
-            const n = Math.max(1, Math.ceil(Math.log2(values.length)) + 1);
+            // auto — Sturges on total observations (not distinct values)
+            const n = Math.max(1, Math.ceil(Math.log2(total)) + 1);
             const step = (max - min) / n;
             thresholds = d3.range(1, n).map(i => min + i * step);
         }
 
-        const binner = d3.bin<number, number>()
-            .domain([min, domainMax])
-            .thresholds(thresholds);
-
-        // d3 bins are left-inclusive [x0, x1); last bin is [x0, x1] (closed) — matches SPEC [x) logic
-        return binner(values).map(b => ({
-            x0: b.x0!,
-            x1: b.x1!,
-            count: b.length,
-        }));
+        // Manual weighted binning: [x0, x1) left-inclusive, last bin closed on the right
+        const edges = [min, ...thresholds, domainMax];
+        const counts = new Array(edges.length - 1).fill(0);
+        for (let i = 0; i < values.length; i++) {
+            let idx = d3.bisectRight(edges, values[i]) - 1;
+            if (idx < 0) idx = 0;
+            if (idx >= counts.length) idx = counts.length - 1;
+            counts[idx] += weights[i];
+        }
+        return counts.map((count, i) => ({ x0: edges[i], x1: edges[i + 1], count }));
     }
 
-    private renderHistogram(bins: Bin[], values: number[], width: number, height: number): void {
+    private renderHistogram(bins: Bin[], data: HistogramData, width: number, height: number): void {
         const margin = { top: 12, right: 16, bottom: 36, left: 44 };
         const innerW = Math.max(0, width - margin.left - margin.right);
         const innerH = Math.max(0, height - margin.top - margin.bottom);
@@ -179,7 +201,7 @@ export class Visual implements IVisual {
         const xAxisCard = this.formattingSettings.xAxis;
         const yAxisCard = this.formattingSettings.yAxis;
 
-        const stats = this.computeStats(values);
+        const stats = this.computeStats(data);
         const showCurve = this.formattingSettings.normalCurve.show.value && stats.sd > 0;
 
         const x0 = bins[0].x0;
@@ -190,7 +212,7 @@ export class Visual implements IVisual {
         // Extend y-domain to fit the normal-curve peak so it isn't clipped
         const binWidth = bins[0].x1 - bins[0].x0;
         const curvePeak = showCurve
-            ? (1 / (stats.sd * Math.sqrt(2 * Math.PI))) * values.length * binWidth
+            ? (1 / (stats.sd * Math.sqrt(2 * Math.PI))) * data.total * binWidth
             : 0;
         const yMax = Math.max(binCountMax, curvePeak);
         const yScale = d3.scaleLinear().domain([0, yMax]).nice().range([innerH, 0]);
@@ -252,7 +274,7 @@ export class Visual implements IVisual {
 
         // Normal curve overlay (paid)
         if (showCurve) {
-            this.drawNormalCurve(g, stats, values.length, bins, xScale, yScale, innerH, isHC, colors.foreground);
+            this.drawNormalCurve(g, stats, data.total, bins, xScale, yScale, innerH, isHC, colors.foreground);
         }
 
         // Spec limits + Cp/Cpk (paid)
@@ -261,11 +283,21 @@ export class Visual implements IVisual {
         }
     }
 
-    private computeStats(values: number[]): { mean: number; sd: number } {
-        const mean = d3.mean(values) ?? 0;
-        const variance = values.length > 1
-            ? d3.sum(values, v => (v - mean) ** 2) / (values.length - 1)
-            : 0;
+    private computeStats(data: HistogramData): { mean: number; sd: number } {
+        const { values, weights, total } = data;
+        if (total <= 0) {
+            return { mean: 0, sd: 0 };
+        }
+        let weightedSum = 0;
+        for (let i = 0; i < values.length; i++) {
+            weightedSum += values[i] * weights[i];
+        }
+        const mean = weightedSum / total;
+        let sumSqDev = 0;
+        for (let i = 0; i < values.length; i++) {
+            sumSqDev += weights[i] * (values[i] - mean) ** 2;
+        }
+        const variance = total > 1 ? sumSqDev / (total - 1) : 0;
         return { mean, sd: Math.sqrt(variance) };
     }
 
