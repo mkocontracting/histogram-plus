@@ -450,6 +450,12 @@ export class Visual implements IVisual {
             page.appendChild(p);
         }
 
+        const build = document.createElement("div");
+        build.className = "landing-build";
+        build.style.color = body;
+        build.textContent = "build 1.0.0.2";
+        page.appendChild(build);
+
         this.target.appendChild(page);
         this.landingPage = page;
     }
