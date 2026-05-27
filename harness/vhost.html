@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8">
-<link rel="stylesheet" href="./../.tmp/drop/visual.css">
+<link rel="stylesheet" href="./visual.css">
 <style>
   html,body{margin:0;background:#fff;font-family:Segoe UI,sans-serif}
   #host{width:660px;height:440px;border:1px solid #ddd;position:relative;overflow:hidden}
@@ -13,39 +13,36 @@
 <div id="host"></div>
 <div id="err"></div>
 <script>
-// --- minimal IVisualHost mock ---
 function noop(){}
 const selectionManager = {
-  select: ()=>Promise.resolve([]), clear:()=>Promise.resolve(), getSelectionIds:()=>[],
-  registerOnSelectCallback: noop, hasSelection:()=>false, applySelectionFilter: noop,
+  select:()=>Promise.resolve([]), clear:()=>Promise.resolve(), getSelectionIds:()=>[],
+  registerOnSelectCallback:noop, hasSelection:()=>false, applySelectionFilter:noop,
   showContextMenu:()=>Promise.resolve()
 };
 const colorPalette = {
-  getColor: ()=>({ value:'#01B8AA' }),
-  isHighContrast: false,
+  getColor:()=>({value:'#01B8AA'}), isHighContrast:false,
   foreground:{value:'#000'}, background:{value:'#fff'},
   foregroundSelected:{value:'#000'}, hyperlink:{value:'#00f'}
 };
-const tooltipService = { enabled:()=>false, show:noop, hide:noop, move:noop, addTooltip:noop, removeTooltip:noop };
+const tooltipService = {enabled:()=>false,show:noop,hide:noop,move:noop,addTooltip:noop,removeTooltip:noop};
 const events = {
-  renderingStarted:noop, renderingFinished:()=>{ window.__rendered=true; }, renderingFailed:noop
+  renderingStarted:noop,
+  renderingFinished:()=>{ window.__rendered=true; },
+  renderingFailed:(opts,err)=>{ document.getElementById('err').textContent=err||'renderingFailed'; window.__rendered=true; }
 };
-const selectionIdBuilder = () => {
-  const b={withCategory:()=>b,withSeries:()=>b,withMeasure:()=>b,withTable:()=>b,createSelectionId:()=>({})};
-  return b;
-};
+const selectionIdBuilder=()=>{const b={withCategory:()=>b,withSeries:()=>b,withMeasure:()=>b,withTable:()=>b,createSelectionId:()=>({})};return b;};
 const host = {
-  createSelectionIdBuilder: selectionIdBuilder,
-  createSelectionManager: ()=>selectionManager,
-  colorPalette, tooltipService, eventService: events,
+  createSelectionIdBuilder:selectionIdBuilder,
+  createSelectionManager:()=>selectionManager,
+  colorPalette, tooltipService, eventService:events,
   locale:'en-US', fetchMoreData:()=>false, persistProperties:noop, applyJsonFilter:noop,
   createLocalizationManager:()=>({getDisplayName:(k)=>k}),
   displayWarningIcon:noop, telemetry:{trace:noop},
-  hostCapabilities:{allowInteractions:true}, instanceId:'histogram-plus', refreshHostData:noop,
-  switchFocusModeState:noop, isPaperVisualEnabled:()=>false
+  hostCapabilities:{allowInteractions:true}, instanceId:'histogram-plus',
+  refreshHostData:noop, switchFocusModeState:noop, isPaperVisualEnabled:()=>false
 };
 
-// --- sample data: ~150 normally-distributed values (mean=50, sd=10) ---
+// Sample data: 150 normally-distributed values (mean≈50, sd≈10)
 const rawValues = [
   42.3,55.1,48.7,61.2,38.9,52.4,45.6,58.3,50.1,47.8,
   63.5,41.2,53.9,49.0,56.7,44.3,60.1,46.5,51.8,57.2,
@@ -64,34 +61,40 @@ const rawValues = [
   45.4,63.3,50.0,56.5,41.1,59.2,47.0,54.2,43.9,62.0
 ];
 
-const colMeta = { displayName:'Values', queryName:'values', roles:{ values:true }, type:{ numeric:true } };
+const colMeta = {
+  displayName:'Values', queryName:'values',
+  roles:{ values:true },
+  type:{ numeric:true },
+  index:0
+};
 
-const tableRows = rawValues.map(v => [v]);
-const tableIdentity = rawValues.map((_,i) => ({ key: String(i) }));
-
+// categorical dataView — values as categories (Grouping role, raw rows)
 const dataView = {
-  metadata: { columns: [colMeta] },
-  table: {
-    columns: [colMeta],
-    rows: tableRows,
-    identity: tableIdentity,
-    identityFields: []
+  metadata:{ columns:[colMeta] },
+  categorical:{
+    categories:[{
+      source: colMeta,
+      values: rawValues,
+      identity: rawValues.map((_,i)=>({key:String(i)})),
+      identityFields:[]
+    }],
+    values: Object.assign([], { grouped:()=>[] })
   }
 };
 
 window.powerbi = { visuals: { plugins: {} } };
 </script>
-<script src="./../.tmp/drop/visual.js"></script>
+<script src="./visual.js"></script>
 <script>
 try {
   const guid = Object.keys(window.powerbi.visuals.plugins)[0];
   const plugin = window.powerbi.visuals.plugins[guid];
   const el = document.getElementById('host');
-  const visual = plugin.create({ element: el, host });
+  const visual = plugin.create({ element:el, host });
   visual.update({
-    dataViews: [dataView],
-    viewport: { width: 660, height: 440 },
-    type: 2
+    dataViews:[dataView],
+    viewport:{ width:660, height:440 },
+    type:2
   });
 } catch(e) {
   document.getElementById('err').textContent = e.stack || e.message;

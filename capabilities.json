@@ -3,8 +3,8 @@
         {
             "displayName": "Values",
             "name": "values",
-            "kind": "GroupingOrMeasure",
-            "description": "Numeric column or measure — individual values used for binning"
+            "kind": "Grouping",
+            "description": "Numeric column to build the histogram from (use a column, not a measure)"
         }
     ],
     "objects": {
@@ -62,15 +62,13 @@
     "dataViewMappings": [
         {
             "conditions": [
-                { "values": { "max": 1 } }
+                { "values": { "min": 1, "max": 1 } }
             ],
-            "table": {
-                "rows": {
-                    "select": [
-                        { "for": { "in": "values" } }
-                    ],
+            "categorical": {
+                "categories": {
+                    "bind": { "to": "values" },
                     "dataReductionAlgorithm": {
-                        "sample": { "count": 10000 }
+                        "window": { "count": 30000 }
                     }
                 }
             }
