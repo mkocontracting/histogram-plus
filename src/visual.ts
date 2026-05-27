@@ -134,16 +134,17 @@ export class Visual implements IVisual {
         const mode = binsCard.mode.value.value as string;
 
         let thresholds: number[];
+        let domainMax = max;
         if (mode === "count") {
             const n = Math.max(1, Math.round(binsCard.count.value));
             const step = (max - min) / n;
             thresholds = d3.range(1, n).map(i => min + i * step);
         } else if (mode === "width") {
             const w = binsCard.width.value > 0 ? binsCard.width.value : (max - min);
-            thresholds = [];
-            for (let t = min + w; t < max; t += w) {
-                thresholds.push(t);
-            }
+            // Extend domain so the final bin is full-width (no misleading skinny remainder bar)
+            const nBins = Math.ceil((max - min) / w);
+            domainMax = min + nBins * w;
+            thresholds = d3.range(1, nBins).map(i => min + i * w);
         } else {
             // auto — Sturges
             const n = Math.max(1, Math.ceil(Math.log2(values.length)) + 1);
@@ -152,7 +153,7 @@ export class Visual implements IVisual {
         }
 
         const binner = d3.bin<number, number>()
-            .domain([min, max])
+            .domain([min, domainMax])
             .thresholds(thresholds);
 
         // d3 bins are left-inclusive [x0, x1); last bin is [x0, x1] (closed) — matches SPEC [x) logic
