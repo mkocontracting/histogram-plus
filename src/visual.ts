@@ -48,9 +48,10 @@ interface Bin {
 }
 
 interface HistogramData {
-    values: number[];   // distinct (or raw) numeric values
-    weights: number[];  // frequency per value (1 when no Frequency measure)
-    total: number;      // sum of weights = total observations
+    values: number[];      // distinct (or raw) numeric values
+    weights: number[];     // frequency per value (1 when no Frequency measure)
+    total: number;         // sum of weights = total observations
+    hasFrequency: boolean; // whether a Frequency measure was supplied
 }
 
 export class Visual implements IVisual {
@@ -118,7 +119,7 @@ export class Visual implements IVisual {
     private extractData(dataView: DataView | undefined): HistogramData {
         const category = dataView?.categorical?.categories?.[0];
         if (!category?.values) {
-            return { values: [], weights: [], total: 0 };
+            return { values: [], weights: [], total: 0, hasFrequency: false };
         }
         // Power BI groups the category to distinct values; the optional Frequency
         // measure carries the count per value so repeated data bins correctly.
@@ -142,7 +143,7 @@ export class Visual implements IVisual {
             }
         }
         const total = weights.reduce((a, b) => a + b, 0);
-        return { values, weights, total };
+        return { values, weights, total, hasFrequency: !!freqColumn };
     }
 
     private computeBins(data: HistogramData): Bin[] {
@@ -281,6 +282,21 @@ export class Visual implements IVisual {
         if (this.formattingSettings.specLimits.show.value) {
             this.drawSpecLimits(g, stats, xScale, innerW, innerH, isHC, colors.foreground);
         }
+
+        // Smart hint: discrete integer data without a Frequency measure is likely
+        // pre-grouped by Power BI (counts lost). Nudge the user toward Frequency = Count.
+        const looksPreGrouped = !data.hasFrequency
+            && data.values.length >= 2
+            && data.values.length <= 30
+            && data.values.every(v => Number.isInteger(v));
+        if (looksPreGrouped) {
+            g.append("text")
+                .attr("x", 0)
+                .attr("y", -2)
+                .attr("fill", isHC ? colors.foreground : "#999999")
+                .attr("font-size", "10px")
+                .text("Tip: repeated values? Add the column to Frequency → Count");
+        }
     }
 
     private computeStats(data: HistogramData): { mean: number; sd: number } {
@@ -392,13 +408,30 @@ export class Visual implements IVisual {
 
     private renderEmptyState(width: number, height: number): void {
         const colors = this.getHighContrastColors();
-        this.svg.append("text")
-            .attr("x", width / 2)
-            .attr("y", height / 2)
-            .attr("text-anchor", "middle")
-            .attr("fill", this.host.colorPalette.isHighContrast ? colors.foreground : "#999999")
-            .attr("font-size", "13px")
-            .text("Add a numeric column to the Values field");
+        const isHC = this.host.colorPalette.isHighContrast;
+        const titleColor = isHC ? colors.foreground : "#666666";
+        const bodyColor = isHC ? colors.foreground : "#999999";
+
+        const lines: { text: string; size: number; color: string; dy: number }[] = [
+            { text: "Histogram+", size: 16, color: titleColor, dy: 0 },
+            { text: "1. Drag a numeric column to the Values field.", size: 12, color: bodyColor, dy: 30 },
+            { text: "2. For data with repeated values, drag the same", size: 12, color: bodyColor, dy: 20 },
+            { text: "    column to Frequency and set it to Count.", size: 12, color: bodyColor, dy: 16 },
+            { text: "(Continuous data needs only the Values field.)", size: 11, color: bodyColor, dy: 24 },
+        ];
+
+        const totalH = lines.reduce((a, l) => a + l.dy, 0);
+        let y = height / 2 - totalH / 2;
+        for (const line of lines) {
+            y += line.dy;
+            this.svg.append("text")
+                .attr("x", width / 2)
+                .attr("y", y)
+                .attr("text-anchor", "middle")
+                .attr("fill", line.color)
+                .attr("font-size", `${line.size}px`)
+                .text(line.text);
+        }
     }
 
     public getFormattingModel(): powerbi.visuals.FormattingModel {
