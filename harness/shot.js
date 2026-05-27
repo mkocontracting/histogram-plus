@@ -22,5 +22,10 @@ const visualName = path.basename(projectRoot);
   const err = await page.$eval('#err', el => el.textContent).catch(() => '');
   if (err) console.log('ERROR:', err);
   await browser.close();
+
+  // Mirror to OneDrive so Marek can watch along on Windows
+  const mirror = '/mnt/c/Users/MKorb/OneDrive/01 Travel and work/01 MKO Contracting/04 AI stuff/AIprojects/projects/powerbi visuals/visuals/histogram-plus/screenshot.png';
+  try { fs.copyFileSync(out, mirror); } catch(_) {}
+
   console.log('screenshot:', out);
 })().catch(e => { console.error('FAIL:', e.message); process.exit(1); });
