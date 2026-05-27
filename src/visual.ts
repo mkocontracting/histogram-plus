@@ -27,6 +27,7 @@
 
 import powerbi from "powerbi-visuals-api";
 import { FormattingSettingsService } from "powerbi-visuals-utils-formattingmodel";
+import { ITooltipServiceWrapper, createTooltipServiceWrapper } from "powerbi-visuals-utils-tooltiputils";
 import * as d3 from "d3";
 import "./../style/visual.less";
 
@@ -52,6 +53,7 @@ export class Visual implements IVisual {
     private selectionManager: ISelectionManager;
     private target: HTMLElement;
     private svg: d3.Selection<SVGSVGElement, unknown, null, undefined>;
+    private tooltipServiceWrapper: ITooltipServiceWrapper;
     private formattingSettings: VisualFormattingSettingsModel;
     private formattingSettingsService: FormattingSettingsService;
 
@@ -59,6 +61,7 @@ export class Visual implements IVisual {
         this.host = options.host;
         this.events = options.host.eventService;
         this.selectionManager = options.host.createSelectionManager();
+        this.tooltipServiceWrapper = createTooltipServiceWrapper(options.host.tooltipService, options.element);
         this.formattingSettingsService = new FormattingSettingsService();
         this.target = options.element;
 
@@ -201,7 +204,7 @@ export class Visual implements IVisual {
         const barOpacity = isHC ? 1 : bars.fillOpacity.value / 100;
         const barStrokeWidth = isHC ? 2 : 1;
 
-        g.selectAll("rect.bar")
+        const barSelection = g.selectAll("rect.bar")
             .data(bins)
             .enter()
             .append("rect")
@@ -214,6 +217,14 @@ export class Visual implements IVisual {
             .attr("fill-opacity", barOpacity)
             .attr("stroke", barStroke)
             .attr("stroke-width", barStrokeWidth);
+
+        this.tooltipServiceWrapper.addTooltip<Bin>(
+            barSelection,
+            (bin: Bin) => [
+                { displayName: "Range", value: `[${bin.x0.toFixed(2)}, ${bin.x1.toFixed(2)})` },
+                { displayName: "Count", value: bin.count.toString() },
+            ]
+        );
 
         // X axis
         if (xAxisCard.show.value) {
