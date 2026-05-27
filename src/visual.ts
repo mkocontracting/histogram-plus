@@ -159,27 +159,27 @@ export class Visual implements IVisual {
         const binsCard = this.formattingSettings.bins;
         const mode = binsCard.mode.value.value as string;
 
-        let thresholds: number[];
-        let domainMax = max;
+        let edges: number[];
         if (mode === "count") {
             const n = Math.max(1, Math.round(binsCard.count.value));
             const step = (max - min) / n;
-            thresholds = d3.range(1, n).map(i => min + i * step);
+            edges = d3.range(0, n + 1).map(i => min + i * step);
         } else if (mode === "width") {
             const w = binsCard.width.value > 0 ? binsCard.width.value : (max - min);
             // Extend domain so the final bin is full-width (no misleading skinny remainder bar)
             const nBins = Math.ceil((max - min) / w);
-            domainMax = min + nBins * w;
-            thresholds = d3.range(1, nBins).map(i => min + i * w);
+            edges = d3.range(0, nBins + 1).map(i => min + i * w);
         } else {
-            // auto — Sturges on total observations (not distinct values)
-            const n = Math.max(1, Math.ceil(Math.log2(total)) + 1);
-            const step = (max - min) / n;
-            thresholds = d3.range(1, n).map(i => min + i * step);
+            // auto — Sturges count, with "nice" round boundaries that align to the data grid
+            const target = Math.max(1, Math.ceil(Math.log2(total)) + 1);
+            const niceScale = d3.scaleLinear().domain([min, max]).nice(target);
+            edges = niceScale.ticks(target);
+            // Guard: ensure edges fully span the data range
+            if (edges.length < 2 || edges[0] > min) edges.unshift(niceScale.domain()[0]);
+            if (edges[edges.length - 1] < max) edges.push(niceScale.domain()[1]);
         }
 
         // Manual weighted binning: [x0, x1) left-inclusive, last bin closed on the right
-        const edges = [min, ...thresholds, domainMax];
         const counts = new Array(edges.length - 1).fill(0);
         for (let i = 0; i < values.length; i++) {
             let idx = d3.bisectRight(edges, values[i]) - 1;
