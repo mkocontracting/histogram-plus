@@ -2,10 +2,13 @@ const { chromium } = require('playwright');
 const path = require('path');
 const fs = require('fs');
 
+// Derive visual name from the project root (two levels up from harness/)
+const projectRoot = path.resolve(__dirname, '..');
+const visualName = path.basename(projectRoot);
+
 (async () => {
-  // Always sync vhost.html to .tmp/drop/ before screenshotting
-  const src = path.join(process.env.HOME, 'histogramPlus/harness/vhost.html');
-  const dst = path.join(process.env.HOME, 'histogramPlus/.tmp/drop/vhost.html');
+  const src = path.join(projectRoot, 'harness', 'vhost.html');
+  const dst = path.join(projectRoot, '.tmp', 'drop', 'vhost.html');
   fs.copyFileSync(src, dst);
 
   const browser = await chromium.launch();
@@ -14,7 +17,7 @@ const fs = require('fs');
   page.on('pageerror', e => console.log('PAGEERROR:', e.message));
   await page.goto('file://' + dst);
   await page.waitForFunction('window.__rendered === true', { timeout: 10000 }).catch(() => {});
-  const out = path.join(process.env.HOME, 'histogramPlus/harness/screenshot.png');
+  const out = path.join(projectRoot, 'harness', 'screenshot.png');
   await page.screenshot({ path: out });
   const err = await page.$eval('#err', el => el.textContent).catch(() => '');
   if (err) console.log('ERROR:', err);
