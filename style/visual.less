@@ -17,6 +17,9 @@ svg.histogram-plus {
     box-sizing: border-box;
     padding: 16px;
     text-align: center;
+    // Let clicks pass through to Power BI so the empty visual stays
+    // selectable / draggable / deletable like a normal visual.
+    pointer-events: none;
 
     .landing-title {
         font-size: 18px;
