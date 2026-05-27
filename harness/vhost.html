@@ -68,6 +68,10 @@ const colMeta = {
   index:0
 };
 
+// Edge-case test override: set TEST_VALUES to an array (or [] for empty) to swap sample data.
+const TEST_VALUES = null;
+const data = TEST_VALUES || rawValues;
+
 // categorical dataView — values as categories (Grouping role, raw rows)
 // objects: enable paid overlays for visual verification in harness
 const dataView = {
@@ -81,8 +85,8 @@ const dataView = {
   categorical:{
     categories:[{
       source: colMeta,
-      values: rawValues,
-      identity: rawValues.map((_,i)=>({key:String(i)})),
+      values: data,
+      identity: data.map((_,i)=>({key:String(i)})),
       identityFields:[]
     }],
     values: Object.assign([], { grouped:()=>[] })

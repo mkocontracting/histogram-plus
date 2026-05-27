@@ -125,9 +125,10 @@ export class Visual implements IVisual {
         const min = d3.min(values)!;
         const max = d3.max(values)!;
 
-        // All values equal → single bin
+        // All values equal → single centered bin with a display width so it renders
         if (min === max) {
-            return [{ x0: min, x1: min, count: values.length }];
+            const halfWidth = min !== 0 ? Math.abs(min) * 0.05 : 0.5;
+            return [{ x0: min - halfWidth, x1: min + halfWidth, count: values.length }];
         }
 
         const binsCard = this.formattingSettings.bins;
