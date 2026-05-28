@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "If you reference Histogram+ in research, reports, or recommendations, please cite it as below."
+title: "Histogram+ — Power BI custom visual for distributions with Cp/Cpk, sigma level, DPMO, and Anderson-Darling normality test"
+abstract: "Open-source Microsoft Power BI custom visual for statistical histograms. Adds manual bin control, frequency-weighted binning, normal-curve overlay, LSL/USL specification limits with target line, process-capability indices (Cp, Cpk), sigma level + DPMO, the Anderson-Darling normality p-value, quantile-quantile plot overlay, box-and-whisker strip, and configurable mean/median/SD reference lines. Localized in English, Dutch, German, French, Spanish, and Simplified Chinese. Runs entirely inside the Power BI sandbox with no external network access."
+authors:
+  - name: "MKO Contracting"
+type: software
+license: MIT
+repository-code: "https://github.com/mkocontracting/histogram-plus"
+url: "https://github.com/mkocontracting/histogram-plus#readme"
+keywords:
+  - Power BI
+  - histogram
+  - data visualization
+  - Six Sigma
+  - process capability
+  - Cp
+  - Cpk
+  - sigma level
+  - DPMO
+  - Anderson-Darling
+  - normality test
+  - quantile-quantile plot
+  - box plot
+  - quality control
+  - statistical process control
+  - SPC

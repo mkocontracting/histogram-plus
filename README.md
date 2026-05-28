@@ -1,5 +1,7 @@
 # Histogram+
 
+**🌐 Other languages:** [Nederlands](docs/README.nl.md) · [Deutsch](docs/README.de.md) · [Français](docs/README.fr.md) · [Español](docs/README.es.md) · [简体中文](docs/README.zh.md)
+
 A Power BI custom visual for numeric distributions, built for quality, process, and lab analysis. It gives you manual bin control, a normal curve overlay, LSL/USL spec limits with target line, Cp/Cpk plus optional sigma level + DPMO and an Anderson-Darling normality test, and a clean reference-line layer (mean, median, ±N SD).
 
 ![Histogram+ — advanced view](harness/appsource/02-advanced.png)
@@ -35,7 +37,39 @@ A Power BI custom visual for numeric distributions, built for quality, process, 
 
 ## Languages
 
-Histogram+ is available in **English** and **Dutch (nl-NL)**. Power BI Desktop uses the host language for the format pane, the on-canvas labels (Mean, Median, LSL, USL, Target), and the visual's empty-state and tooltip text.
+Histogram+ is localized in:
+
+- English (`en-US`)
+- Dutch (`nl-NL`)
+- German (`de-DE`)
+- French (`fr-FR`)
+- Spanish (`es-ES`)
+- Simplified Chinese (`zh-CN`)
+
+Power BI Desktop uses the host language for the format pane, the on-canvas labels (Mean, Median, LSL, USL, Target, etc.), and the visual's empty-state and tooltip text.
+
+## FAQ
+
+**Does Power BI have a built-in histogram?**
+No. Power BI Desktop has no native histogram visual. You can fake one with a clustered column chart and a bin-grouping DAX measure, but the result has no normal curve, no spec limits, no Cp/Cpk, and no normality testing. Histogram+ fills that gap.
+
+**What's the difference between Histogram+ and the Microsoft "Histogram chart" Power BI visual?**
+The Microsoft sample histogram visual is a rendering demo with auto-binning only. Histogram+ adds manual bin control (count or width), a custom x-axis range that excludes out-of-range values from counts, frequency-weighted binning for pre-grouped data, a normal curve overlay, LSL/USL spec limits, target line, Cp/Cpk, sigma level + DPMO, Anderson-Darling normality test, Q-Q plot, box plot, and mean/median/SD reference lines.
+
+**How do I create a histogram in Power BI for quality / Six Sigma analysis?**
+Install Histogram+ from AppSource, drag a numeric column (e.g. measured diameter, weight, lab pH) to **Values (numeric)**, and turn on **Spec limits** in the Format pane. Enter LSL and USL. Cp/Cpk appears automatically when both limits are set. Enable **Show sigma level + DPMO** to translate Cp/Cpk into the Six Sigma vocabulary that quality teams use.
+
+**How do I handle repeated values like ages, scores, or integer measurements?**
+Power BI groups categorical values before passing them to a custom visual. Drag the same column to **Frequency (Count)** in addition to **Values (numeric)** and set the aggregation to Count. Histogram+ then uses the count as the bar weight, so each bar is sized correctly.
+
+**Is Histogram+ certified by Microsoft?**
+The published version is built for the Microsoft certified track: `privileges: []`, no external network calls, source publicly mirrored to the GitHub `certification` branch.
+
+**Is Histogram+ free?**
+Version 1 is fully free with no feature gates. Source is MIT licensed.
+
+**Does it work offline / in air-gapped environments?**
+Yes. Histogram+ has zero external network dependencies. The visual runs entirely inside Power BI's sandbox.
 
 ## Privacy
 
