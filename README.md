@@ -35,6 +35,70 @@ A Power BI custom visual for numeric distributions, built for quality, process, 
 - Cp / Cpk only appears when both LSL and USL are set and LSL < USL.
 - The Anderson-Darling test needs at least 8 observations and a non-zero sample standard deviation.
 
+## Recipes
+
+Short, copy-the-clicks guides for common setups.
+
+### Group ages into 5-year buckets (or any width)
+- Format pane → **Bins** → **Bin mode** = `Bin width` → **Bin width** = `5`.
+- For 3-year buckets, set Bin width to `3`. For decades, `10`.
+
+### Start the x-axis at a specific value (e.g. ages 20 and up)
+- Format pane → **X axis** → toggle **Custom range** on.
+- **Min** = `20`, **Max** = `80` (or whatever upper limit fits).
+- Values outside that range are excluded from the bar counts entirely.
+
+### Fixed number of bins, regardless of range
+- Format pane → **Bins** → **Bin mode** = `Number of bins` → set the count (e.g. `15`).
+- Useful when comparing the same chart across multiple datasets and you want a consistent bar count.
+
+### Let Histogram+ pick the bins for you
+- **Bin mode** = `Auto (Sturges)`.
+- Auto switches strategy based on the data: Sturges for small samples, Freedman-Diaconis for large samples, and one bin per integer when the data is integer with a small range.
+
+### Six Sigma / process capability setup
+- Drag a measurement column to **Values (numeric)**.
+- Format pane → **Spec limits** → toggle on. Enter LSL, USL, and optionally a Target value.
+- Turn on **Show Cp / Cpk**. Cp / Cpk appear in the bottom-right corner.
+- Turn on **Show sigma level + DPMO** to translate Cp/Cpk into Six Sigma terms.
+- Turn on **Show Anderson-Darling p-value** to check whether the normal-curve assumption behind Cp/Cpk actually holds for this data.
+
+### Visualize a bimodal distribution
+- Use bin count high enough to see both peaks (try 18–25 bins).
+- Turn on **Normal curve** — if the curve clearly misfits the bars, that's your bimodality cue.
+- Turn on **Box plot** strip — a long box with whiskers that don't span both peaks confirms a non-normal shape.
+- Turn on **Q-Q plot** — points that bow away from the 45° line confirm departure from normality.
+
+### Show repeated / discrete data correctly
+- Drag the same column to **Values (numeric)** AND **Frequency (Count)**.
+- For the Frequency field, set the aggregation to **Count** (not Sum).
+- Without this, Power BI groups identical values to a single bar — you'll see far fewer bars than you expect.
+
+### Cross-filter with other visuals
+- Click a bar to select it. Other visuals on the page filter to that subset.
+- Hold **Ctrl** while clicking additional bars to multi-select.
+- Use arrow keys to move the focus ring between bars, **Enter** or **Space** to select, **Esc** to clear.
+
+### Compare distributions across slicer choices
+- Place a slicer on the report page (e.g. region, year).
+- Histogram+ highlights the slicer-filtered subset on top of the full distribution, so you can see how the chosen segment compares to the whole.
+
+### Compact / mobile layout
+- At narrow viewports (below 300×200), axis titles drop and margins shrink automatically.
+- Useful when embedding the visual in a tight grid cell or the Power BI mobile app.
+
+### Custom number formatting
+- Format pane → **X axis** → **Number format**. Accepts d3-format strings:
+  - `.1f` — one decimal.
+  - `,.0f` — thousands separator, no decimals.
+  - `,.2~f` — thousands separator, up to two decimals, trim trailing zeros.
+- Same field exists for the Y axis.
+
+### High-contrast and accessibility
+- Power BI's four high-contrast themes are respected: white-on-black, black-on-white, green-on-black, yellow-on-blue.
+- Every bar has a screen-reader aria-label.
+- The visual responds to the operating system's `prefers-reduced-motion` setting and skips animations under reduced motion.
+
 ## Languages
 
 Histogram+ is localized in:
