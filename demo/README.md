@@ -33,18 +33,15 @@ Three worked examples for the AppSource listing and the project portfolio.
    - **Marketing audience**: Values = `Age`. Bin mode = width 5. Reference lines: mean + median. Normal curve off.
 4. `File → Save As → Power BI Project (.pbip)` to `demo/histogramPlus-demo/`.
 
-### Subsequent rebuilds (scripted)
-After the PBIP source exists in `demo/histogramPlus-demo/`, Claude can regenerate the `.pbix` with:
+### Subsequent visual updates (scripted, no Desktop needed)
+After Marek has built the demo `.pbix` once and saved it to `visuals/histogram-plus/demo.pbix`, every following visual version bump can replace the embedded Histogram+ visual binary without re-opening Power BI Desktop:
 
 ```bash
-pbi-tools.exe compile demo/histogramPlus-demo/ -outPath demo/dist/
+npm run build              # produce a new .pbiviz in dist/
+npm run demo:update        # swap the visual inside demo.pbix in place
 ```
 
-Output: `demo/dist/histogramPlus-demo.pbix`. Copy to the OneDrive handoff folder:
+`demo/update-pbix-visual.py` reads the newest `.pbiviz` from `dist/`, parses its embedded `package.json` + `resources/<guid>.pbiviz.json`, and rewrites the same two files inside the `.pbix` zip. The data model, report pages, settings, and bindings stay untouched.
 
-```bash
-cp demo/dist/histogramPlus-demo.pbix \
-   "/mnt/c/Users/MKorb/OneDrive/.../visuals/histogram-plus/demo.pbix"
-```
-
-This pipeline is documented in the project `PLAYBOOK.md` under Demo build.
+### Rebuilding the demo from PBIP source
+If the report pages themselves need to change (new page, new data binding, layout edits), Marek must re-open Desktop and re-save. The current PBIP source extracted by `pbi-tools extract` lives in `demo/extracted/` and is git-tracked so changes are diffable.

@@ -17,6 +17,7 @@
     "build": "pbiviz package",
     "shot": "node harness/shot.js",
     "shots:appsource": "node harness/shots-appsource.js",
+    "demo:update": "python3 demo/update-pbix-visual.py",
     "verify": "node harness/verify.js",
     "lint": "npx eslint .",
     "audit": "npm audit",

@@ -1,0 +1,155 @@
+{
+  "name": "84e95d0faee87d476ccd",
+  "layouts": [
+    {
+      "id": 0,
+      "position": {
+        "x": 282.65709156193896,
+        "y": 125.2423698384201,
+        "z": 0,
+        "width": 774.43447037701969,
+        "height": 513.608617594255,
+        "tabOrder": 0
+      }
+    }
+  ],
+  "singleVisual": {
+    "visualType": "histogramPlus46DE41859B994C119A79AF0AC250DD22",
+    "projections": {
+      "values": [
+        {
+          "queryRef": "marketing-audience.Age"
+        }
+      ],
+      "frequency": [
+        {
+          "queryRef": "Sum(marketing-audience.Age)"
+        }
+      ]
+    },
+    "prototypeQuery": {
+      "Version": 2,
+      "From": [
+        {
+          "Name": "m",
+          "Entity": "marketing-audience",
+          "Type": 0
+        }
+      ],
+      "Select": [
+        {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Source": "m"
+              }
+            },
+            "Property": "Age"
+          },
+          "Name": "marketing-audience.Age",
+          "NativeReferenceName": "Age"
+        },
+        {
+          "Aggregation": {
+            "Expression": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Source": "m"
+                  }
+                },
+                "Property": "Age"
+              }
+            },
+            "Function": 5
+          },
+          "Name": "Sum(marketing-audience.Age)",
+          "NativeReferenceName": "Count of Age"
+        }
+      ],
+      "OrderBy": [
+        {
+          "Direction": 2,
+          "Expression": {
+            "Aggregation": {
+              "Expression": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Source": "m"
+                    }
+                  },
+                  "Property": "Age"
+                }
+              },
+              "Function": 5
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true,
+    "hasDefaultSort": true,
+    "objects": {
+      "bins": [
+        {
+          "properties": {
+            "mode": {
+              "expr": {
+                "Literal": {
+                  "Value": "'width'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "referenceLines": [
+        {
+          "properties": {
+            "showMean": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "showMedian": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "xAxis": [
+        {
+          "properties": {
+            "title": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Age'"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "yAxis": [
+        {
+          "properties": {
+            "title": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Audience size'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

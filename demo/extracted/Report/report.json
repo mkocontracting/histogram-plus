@@ -1,0 +1,34 @@
+{
+  "id": 0,
+  "layoutOptimization": 0,
+  "resourcePackages": [
+    {
+      "resourcePackage": {
+        "disabled": false,
+        "items": [
+          {
+            "name": "CY26SU05",
+            "path": "BaseThemes/CY26SU05.json",
+            "type": 202
+          }
+        ],
+        "name": "SharedResources",
+        "type": 2
+      }
+    },
+    {
+      "resourcePackage": {
+        "disabled": false,
+        "items": [
+          {
+            "name": "histogramPlus46DE41859B994C119A79AF0AC250DD22.pbiviz.json",
+            "path": "histogramPlus46DE41859B994C119A79AF0AC250DD22.pbiviz.json",
+            "type": 5
+          }
+        ],
+        "name": "histogramPlus46DE41859B994C119A79AF0AC250DD22",
+        "type": 0
+      }
+    }
+  ]
+}

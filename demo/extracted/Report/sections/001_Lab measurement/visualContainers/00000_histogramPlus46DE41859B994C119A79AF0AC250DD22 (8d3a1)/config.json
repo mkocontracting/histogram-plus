@@ -1,0 +1,176 @@
+{
+  "name": "8d3a11785704bbacedce",
+  "layouts": [
+    {
+      "id": 0,
+      "position": {
+        "x": 268.8689407540395,
+        "y": 126.39138240574506,
+        "z": 0,
+        "width": 741.113105924596,
+        "height": 518.20466786355473,
+        "tabOrder": 0
+      }
+    }
+  ],
+  "singleVisual": {
+    "visualType": "histogramPlus46DE41859B994C119A79AF0AC250DD22",
+    "projections": {
+      "values": [
+        {
+          "queryRef": "lab-measurement.pH"
+        }
+      ],
+      "frequency": [
+        {
+          "queryRef": "Sum(lab-measurement.pH)"
+        }
+      ]
+    },
+    "prototypeQuery": {
+      "Version": 2,
+      "From": [
+        {
+          "Name": "l",
+          "Entity": "lab-measurement",
+          "Type": 0
+        }
+      ],
+      "Select": [
+        {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Source": "l"
+              }
+            },
+            "Property": "pH"
+          },
+          "Name": "lab-measurement.pH",
+          "NativeReferenceName": "pH"
+        },
+        {
+          "Aggregation": {
+            "Expression": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Source": "l"
+                  }
+                },
+                "Property": "pH"
+              }
+            },
+            "Function": 5
+          },
+          "Name": "Sum(lab-measurement.pH)",
+          "NativeReferenceName": "Count of pH"
+        }
+      ],
+      "OrderBy": [
+        {
+          "Direction": 2,
+          "Expression": {
+            "Aggregation": {
+              "Expression": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Source": "l"
+                    }
+                  },
+                  "Property": "pH"
+                }
+              },
+              "Function": 5
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true,
+    "hasDefaultSort": true,
+    "objects": {
+      "bins": [
+        {
+          "properties": {
+            "mode": {
+              "expr": {
+                "Literal": {
+                  "Value": "'count'"
+                }
+              }
+            },
+            "width": {
+              "expr": {
+                "Literal": {
+                  "Value": "0.2D"
+                }
+              }
+            },
+            "count": {
+              "expr": {
+                "Literal": {
+                  "Value": "18D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "normalCurve": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "referenceLines": [
+        {
+          "properties": {
+            "showMean": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "showSd": {
+              "expr": {
+                "Literal": {
+                  "Value": "false"
+                }
+              }
+            },
+            "showMedian": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "xAxis": [
+        {
+          "properties": {
+            "title": {
+              "expr": {
+                "Literal": {
+                  "Value": "'pH (x 10)'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

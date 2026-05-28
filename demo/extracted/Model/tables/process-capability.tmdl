@@ -1,0 +1,29 @@
+﻿table process-capability
+
+	column MeasurementID
+		dataType: string
+		summarizeBy: none
+		sourceColumn: MeasurementID
+
+		annotation SummarizationSetBy = Automatic
+
+	column Diameter_mm
+		dataType: int64
+		formatString: 0
+		summarizeBy: sum
+		sourceColumn: Diameter_mm
+
+		annotation SummarizationSetBy = Automatic
+
+	partition process-capability = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents("C:\Users\MKorb\OneDrive\01 Travel and work\01 MKO Contracting\04 AI stuff\AIprojects\projects\powerbi visuals\visuals\histogram-plus\demo-data\process-capability.csv"),[Delimiter=",", Columns=2, QuoteStyle=QuoteStyle.None]),
+				    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"MeasurementID", type text}, {"Diameter_mm", Int64.Type}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_ResultType = Table
+

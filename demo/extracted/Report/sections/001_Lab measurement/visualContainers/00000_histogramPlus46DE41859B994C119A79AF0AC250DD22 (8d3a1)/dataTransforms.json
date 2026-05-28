@@ -1,0 +1,190 @@
+{
+  "objects": {
+    "bins": [
+      {
+        "properties": {
+          "mode": {
+            "expr": {
+              "Literal": {
+                "Value": "'count'"
+              }
+            }
+          },
+          "width": {
+            "expr": {
+              "Literal": {
+                "Value": "0.2D"
+              }
+            }
+          },
+          "count": {
+            "expr": {
+              "Literal": {
+                "Value": "18D"
+              }
+            }
+          }
+        }
+      }
+    ],
+    "normalCurve": [
+      {
+        "properties": {
+          "show": {
+            "expr": {
+              "Literal": {
+                "Value": "true"
+              }
+            }
+          }
+        }
+      }
+    ],
+    "referenceLines": [
+      {
+        "properties": {
+          "showMean": {
+            "expr": {
+              "Literal": {
+                "Value": "true"
+              }
+            }
+          },
+          "showSd": {
+            "expr": {
+              "Literal": {
+                "Value": "false"
+              }
+            }
+          },
+          "showMedian": {
+            "expr": {
+              "Literal": {
+                "Value": "true"
+              }
+            }
+          }
+        }
+      }
+    ],
+    "xAxis": [
+      {
+        "properties": {
+          "title": {
+            "expr": {
+              "Literal": {
+                "Value": "'pH (x 10)'"
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  "projectionOrdering": {
+    "values": [
+      0
+    ],
+    "frequency": [
+      1
+    ]
+  },
+  "queryMetadata": {
+    "Select": [
+      {
+        "Restatement": "pH",
+        "Name": "lab-measurement.pH",
+        "Type": 3,
+        "Format": "0"
+      },
+      {
+        "Restatement": "Count of pH",
+        "Name": "Sum(lab-measurement.pH)",
+        "Type": 3
+      }
+    ],
+    "Filters": [
+      {
+        "type": 2,
+        "expression": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "lab-measurement"
+              }
+            },
+            "Property": "pH"
+          }
+        }
+      }
+    ]
+  },
+  "visualElements": [
+    {
+      "DataRoles": [
+        {
+          "Name": "values",
+          "Projection": 0,
+          "isActive": false
+        },
+        {
+          "Name": "frequency",
+          "Projection": 1,
+          "isActive": false
+        }
+      ]
+    }
+  ],
+  "selects": [
+    {
+      "displayName": "pH",
+      "format": "0",
+      "queryName": "lab-measurement.pH",
+      "roles": {
+        "values": true
+      },
+      "type": {
+        "category": null,
+        "underlyingType": 260
+      },
+      "expr": {
+        "Column": {
+          "Expression": {
+            "SourceRef": {
+              "Entity": "lab-measurement"
+            }
+          },
+          "Property": "pH"
+        }
+      }
+    },
+    {
+      "displayName": "Count of pH",
+      "queryName": "Sum(lab-measurement.pH)",
+      "roles": {
+        "frequency": true
+      },
+      "sort": 2,
+      "sortOrder": 0,
+      "type": {
+        "category": null,
+        "underlyingType": 260
+      },
+      "expr": {
+        "Aggregation": {
+          "Expression": {
+            "Column": {
+              "Expression": {
+                "SourceRef": {
+                  "Entity": "lab-measurement"
+                }
+              },
+              "Property": "pH"
+            }
+          },
+          "Function": 5
+        }
+      }
+    }
+  ]
+}

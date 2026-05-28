@@ -1,0 +1,197 @@
+{
+  "objects": {
+    "specLimits": [
+      {
+        "properties": {
+          "show": {
+            "expr": {
+              "Literal": {
+                "Value": "true"
+              }
+            }
+          },
+          "lsl": {
+            "expr": {
+              "Literal": {
+                "Value": "45D"
+              }
+            }
+          },
+          "usl": {
+            "expr": {
+              "Literal": {
+                "Value": "55D"
+              }
+            }
+          },
+          "showTarget": {
+            "expr": {
+              "Literal": {
+                "Value": "true"
+              }
+            }
+          }
+        }
+      }
+    ],
+    "referenceLines": [
+      {
+        "properties": {
+          "showMean": {
+            "expr": {
+              "Literal": {
+                "Value": "true"
+              }
+            }
+          },
+          "showSd": {
+            "expr": {
+              "Literal": {
+                "Value": "true"
+              }
+            }
+          },
+          "sdCount": {
+            "expr": {
+              "Literal": {
+                "Value": "2D"
+              }
+            }
+          }
+        }
+      }
+    ],
+    "normalCurve": [
+      {
+        "properties": {
+          "show": {
+            "expr": {
+              "Literal": {
+                "Value": "true"
+              }
+            }
+          }
+        }
+      }
+    ],
+    "xAxis": [
+      {
+        "properties": {
+          "title": {
+            "expr": {
+              "Literal": {
+                "Value": "'Diamater (mm)'"
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  "projectionOrdering": {
+    "values": [
+      0
+    ],
+    "frequency": [
+      1
+    ]
+  },
+  "queryMetadata": {
+    "Select": [
+      {
+        "Restatement": "Diameter_mm",
+        "Name": "process-capability.Diameter_mm",
+        "Type": 3,
+        "Format": "0"
+      },
+      {
+        "Restatement": "Count of Diameter_mm",
+        "Name": "Sum(process-capability.Diameter_mm)",
+        "Type": 3
+      }
+    ],
+    "Filters": [
+      {
+        "type": 2,
+        "expression": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "process-capability"
+              }
+            },
+            "Property": "Diameter_mm"
+          }
+        }
+      }
+    ]
+  },
+  "visualElements": [
+    {
+      "DataRoles": [
+        {
+          "Name": "values",
+          "Projection": 0,
+          "isActive": false
+        },
+        {
+          "Name": "frequency",
+          "Projection": 1,
+          "isActive": false
+        }
+      ]
+    }
+  ],
+  "selects": [
+    {
+      "displayName": "Diameter_mm",
+      "format": "0",
+      "queryName": "process-capability.Diameter_mm",
+      "roles": {
+        "values": true
+      },
+      "type": {
+        "category": null,
+        "underlyingType": 260
+      },
+      "expr": {
+        "Column": {
+          "Expression": {
+            "SourceRef": {
+              "Entity": "process-capability"
+            }
+          },
+          "Property": "Diameter_mm"
+        }
+      }
+    },
+    {
+      "displayName": "Count of Diameter_mm",
+      "queryName": "Sum(process-capability.Diameter_mm)",
+      "roles": {
+        "frequency": true
+      },
+      "sort": 2,
+      "sortOrder": 0,
+      "type": {
+        "category": null,
+        "underlyingType": 260
+      },
+      "expr": {
+        "Aggregation": {
+          "Expression": {
+            "Column": {
+              "Expression": {
+                "SourceRef": {
+                  "Entity": "process-capability"
+                }
+              },
+              "Property": "Diameter_mm"
+            }
+          },
+          "Function": 5
+        }
+      }
+    }
+  ]
+}

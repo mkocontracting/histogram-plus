@@ -5,3 +5,6 @@ dist/
 harness/screenshot.png
 harness/screenshot-*.png
 webpack.statistics.*.html
+
+# PBIP-extracted custom visual binary is regenerated from .pbiviz; do not track
+demo/extracted/CustomVisuals/*/resources/

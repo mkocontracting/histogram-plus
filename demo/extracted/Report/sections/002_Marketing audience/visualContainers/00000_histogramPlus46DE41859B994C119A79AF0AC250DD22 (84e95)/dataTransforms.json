@@ -1,0 +1,169 @@
+{
+  "objects": {
+    "bins": [
+      {
+        "properties": {
+          "mode": {
+            "expr": {
+              "Literal": {
+                "Value": "'width'"
+              }
+            }
+          }
+        }
+      }
+    ],
+    "referenceLines": [
+      {
+        "properties": {
+          "showMean": {
+            "expr": {
+              "Literal": {
+                "Value": "true"
+              }
+            }
+          },
+          "showMedian": {
+            "expr": {
+              "Literal": {
+                "Value": "true"
+              }
+            }
+          }
+        }
+      }
+    ],
+    "xAxis": [
+      {
+        "properties": {
+          "title": {
+            "expr": {
+              "Literal": {
+                "Value": "'Age'"
+              }
+            }
+          }
+        }
+      }
+    ],
+    "yAxis": [
+      {
+        "properties": {
+          "title": {
+            "expr": {
+              "Literal": {
+                "Value": "'Audience size'"
+              }
+            }
+          }
+        }
+      }
+    ]
+  },
+  "projectionOrdering": {
+    "values": [
+      0
+    ],
+    "frequency": [
+      1
+    ]
+  },
+  "queryMetadata": {
+    "Select": [
+      {
+        "Restatement": "Age",
+        "Name": "marketing-audience.Age",
+        "Type": 3,
+        "Format": "0"
+      },
+      {
+        "Restatement": "Count of Age",
+        "Name": "Sum(marketing-audience.Age)",
+        "Type": 3
+      }
+    ],
+    "Filters": [
+      {
+        "type": 2,
+        "expression": {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Entity": "marketing-audience"
+              }
+            },
+            "Property": "Age"
+          }
+        }
+      }
+    ]
+  },
+  "visualElements": [
+    {
+      "DataRoles": [
+        {
+          "Name": "values",
+          "Projection": 0,
+          "isActive": false
+        },
+        {
+          "Name": "frequency",
+          "Projection": 1,
+          "isActive": false
+        }
+      ]
+    }
+  ],
+  "selects": [
+    {
+      "displayName": "Age",
+      "format": "0",
+      "queryName": "marketing-audience.Age",
+      "roles": {
+        "values": true
+      },
+      "type": {
+        "category": null,
+        "underlyingType": 260
+      },
+      "expr": {
+        "Column": {
+          "Expression": {
+            "SourceRef": {
+              "Entity": "marketing-audience"
+            }
+          },
+          "Property": "Age"
+        }
+      }
+    },
+    {
+      "displayName": "Count of Age",
+      "queryName": "Sum(marketing-audience.Age)",
+      "roles": {
+        "frequency": true
+      },
+      "sort": 2,
+      "sortOrder": 0,
+      "type": {
+        "category": null,
+        "underlyingType": 260
+      },
+      "expr": {
+        "Aggregation": {
+          "Expression": {
+            "Column": {
+              "Expression": {
+                "SourceRef": {
+                  "Entity": "marketing-audience"
+                }
+              },
+              "Property": "Age"
+            }
+          },
+          "Function": 5
+        }
+      }
+    }
+  ]
+}

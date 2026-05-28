@@ -1,0 +1,183 @@
+{
+  "name": "ce8bb4abcf247e478a97",
+  "layouts": [
+    {
+      "id": 0,
+      "position": {
+        "x": 279.21005385996409,
+        "y": 79.2818671454219,
+        "z": 0,
+        "width": 685.96050269299815,
+        "height": 518.20466786355473,
+        "tabOrder": 0
+      }
+    }
+  ],
+  "singleVisual": {
+    "visualType": "histogramPlus46DE41859B994C119A79AF0AC250DD22",
+    "projections": {
+      "values": [
+        {
+          "queryRef": "process-capability.Diameter_mm"
+        }
+      ],
+      "frequency": [
+        {
+          "queryRef": "Sum(process-capability.Diameter_mm)"
+        }
+      ]
+    },
+    "prototypeQuery": {
+      "Version": 2,
+      "From": [
+        {
+          "Name": "p",
+          "Entity": "process-capability",
+          "Type": 0
+        }
+      ],
+      "Select": [
+        {
+          "Column": {
+            "Expression": {
+              "SourceRef": {
+                "Source": "p"
+              }
+            },
+            "Property": "Diameter_mm"
+          },
+          "Name": "process-capability.Diameter_mm",
+          "NativeReferenceName": "Diameter_mm"
+        },
+        {
+          "Aggregation": {
+            "Expression": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Source": "p"
+                  }
+                },
+                "Property": "Diameter_mm"
+              }
+            },
+            "Function": 5
+          },
+          "Name": "Sum(process-capability.Diameter_mm)",
+          "NativeReferenceName": "Count of Diameter_mm"
+        }
+      ],
+      "OrderBy": [
+        {
+          "Direction": 2,
+          "Expression": {
+            "Aggregation": {
+              "Expression": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Source": "p"
+                    }
+                  },
+                  "Property": "Diameter_mm"
+                }
+              },
+              "Function": 5
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true,
+    "hasDefaultSort": true,
+    "objects": {
+      "specLimits": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "lsl": {
+              "expr": {
+                "Literal": {
+                  "Value": "45D"
+                }
+              }
+            },
+            "usl": {
+              "expr": {
+                "Literal": {
+                  "Value": "55D"
+                }
+              }
+            },
+            "showTarget": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "referenceLines": [
+        {
+          "properties": {
+            "showMean": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "showSd": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "sdCount": {
+              "expr": {
+                "Literal": {
+                  "Value": "2D"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "normalCurve": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "xAxis": [
+        {
+          "properties": {
+            "title": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Diamater (mm)'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

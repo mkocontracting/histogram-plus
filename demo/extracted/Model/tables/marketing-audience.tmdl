@@ -1,0 +1,29 @@
+﻿table marketing-audience
+
+	column UserID
+		dataType: string
+		summarizeBy: none
+		sourceColumn: UserID
+
+		annotation SummarizationSetBy = Automatic
+
+	column Age
+		dataType: int64
+		formatString: 0
+		summarizeBy: sum
+		sourceColumn: Age
+
+		annotation SummarizationSetBy = Automatic
+
+	partition marketing-audience = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents("C:\Users\MKorb\OneDrive\01 Travel and work\01 MKO Contracting\04 AI stuff\AIprojects\projects\powerbi visuals\visuals\histogram-plus\demo-data\marketing-audience.csv"),[Delimiter=",", Columns=2, QuoteStyle=QuoteStyle.None]),
+				    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"UserID", type text}, {"Age", Int64.Type}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_ResultType = Table
+
