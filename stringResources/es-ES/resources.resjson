@@ -153,5 +153,9 @@
     "Comparison_Color2_DisplayName": "Color de la 2ª serie",
     "Comparison_Color2_Description": "Color de relleno de la 2ª serie.",
     "Comparison_ShowLegend_DisplayName": "Mostrar leyenda",
-    "Comparison_ShowLegend_Description": "Muestra una pequeña leyenda con los nombres de las series."
+    "Comparison_ShowLegend_Description": "Muestra una pequeña leyenda con los nombres de las series.",
+    "Comparison_Mode_SideBySide": "Lado a lado",
+    "Comparison_Mode_Stacked": "Apilado",
+    "Comparison_Mode_Mirrored": "En espejo (espalda con espalda)",
+    "Comparison_Mode_Overlay": "Superpuesto"
 }

@@ -153,5 +153,9 @@
     "Comparison_Color2_DisplayName": "Farbe zweite Serie",
     "Comparison_Color2_Description": "Füllfarbe der zweiten Vergleichsserie.",
     "Comparison_ShowLegend_DisplayName": "Legende anzeigen",
-    "Comparison_ShowLegend_Description": "Kleine Legende mit den Seriennamen anzeigen."
+    "Comparison_ShowLegend_Description": "Kleine Legende mit den Seriennamen anzeigen.",
+    "Comparison_Mode_SideBySide": "Nebeneinander",
+    "Comparison_Mode_Stacked": "Gestapelt",
+    "Comparison_Mode_Mirrored": "Gespiegelt (Rücken an Rücken)",
+    "Comparison_Mode_Overlay": "Überlagert"
 }

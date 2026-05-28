@@ -153,5 +153,9 @@
     "Comparison_Color2_DisplayName": "第二系列颜色",
     "Comparison_Color2_Description": "第二比较系列的填充颜色。",
     "Comparison_ShowLegend_DisplayName": "显示图例",
-    "Comparison_ShowLegend_Description": "显示带有系列名称的小型图例。"
+    "Comparison_ShowLegend_Description": "显示带有系列名称的小型图例。",
+    "Comparison_Mode_SideBySide": "并排",
+    "Comparison_Mode_Stacked": "堆叠",
+    "Comparison_Mode_Mirrored": "镜像（背对背）",
+    "Comparison_Mode_Overlay": "叠加"
 }
