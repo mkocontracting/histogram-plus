@@ -138,5 +138,26 @@
     "YAxis_LabelColor_DisplayName": "Labelkleur",
     "YAxis_LabelColor_Description": "Kleur van ticklabels en astitel.",
     "YAxis_FontSize_DisplayName": "Lettergrootte",
-    "YAxis_FontSize_Description": "Lettergrootte van ticklabels in pixels."
+    "YAxis_FontSize_Description": "Lettergrootte van ticklabels in pixels.",
+
+    "Help_AriaLabel": "Help",
+    "Tour_Dismiss": "Tour sluiten",
+    "Tour_Step1": "Pas bins en het asbereik aan in het Opmaakpaneel.",
+    "Tour_Step2": "Schakel speclimits en Cp/Cpk in voor procesanalyse.",
+    "Tour_Step3": "Pijltjestoetsen verplaatsen de focus tussen balken; Enter selecteert.",
+
+    "QQPlot_DisplayName": "Q-Q-grafiek",
+    "QQPlot_Description": "Kwantiel-kwantiel-overlay om normaliteit in één oogopslag te beoordelen.",
+    "QQPlot_Show_DisplayName": "Tonen",
+    "QQPlot_Color_DisplayName": "Puntkleur",
+    "QQPlot_Color_Description": "Kleur van de Q-Q-punten en referentielijn.",
+
+    "BoxPlot_DisplayName": "Boxplot",
+    "BoxPlot_Description": "Een kleine boxplot-strip onder het histogram.",
+    "BoxPlot_Show_DisplayName": "Tonen",
+    "BoxPlot_Color_DisplayName": "Boxkleur",
+    "BoxPlot_Color_Description": "Vulkleur van de box.",
+
+    "Tooltip_MiniChart_DisplayName": "Mini-grafiek in tooltip",
+    "Tooltip_MiniChart_Description": "Toon een kleine histogram-schets in rapport-tooltips."
 }

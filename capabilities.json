@@ -91,6 +91,28 @@
                 "labelColor": { "type": { "fill": { "solid": { "color": true } } } },
                 "fontSize":   { "type": { "formatting": { "fontSize": true } } }
             }
+        },
+        "qqPlot": {
+            "properties": {
+                "show":  { "type": { "bool": true } },
+                "color": { "type": { "fill": { "solid": { "color": true } } } }
+            }
+        },
+        "boxPlot": {
+            "properties": {
+                "show":  { "type": { "bool": true } },
+                "color": { "type": { "fill": { "solid": { "color": true } } } }
+            }
+        },
+        "tooltip": {
+            "properties": {
+                "miniChart": { "type": { "bool": true } }
+            }
+        },
+        "tour": {
+            "properties": {
+                "dismissed": { "type": { "bool": true } }
+            }
         }
     },
     "dataViewMappings": [

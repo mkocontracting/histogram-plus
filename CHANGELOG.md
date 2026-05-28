@@ -4,6 +4,22 @@ All notable changes to Histogram+ are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.0.23] — 2026-05-28
+
+### Added — more locales + advanced statistics + mobile + tour
+- 4 new locales: `de-DE`, `fr-FR`, `es-ES`, `zh-CN` resjson files registered in `pbiviz.json` and harness mock.
+- **Q-Q plot overlay** (formattingSettings card + capabilities). Plots sample vs theoretical normal quantiles via a Beasley-Springer-Moro Φ⁻¹ approximation. Renders as a banded scatter inside the histogram canvas with a 45° reference line.
+- **Box plot strip** below the x-axis title (auto-positions under the axis label when present). Whiskers, IQR box, median bar, 1.5·IQR fences.
+- **Tooltip mini-chart** toggle that adds a Unicode block-element sparkline summarising all bin counts inside report-page tooltips.
+- **Adaptive bin auto-detect**: Sturges for small N, Freedman-Diaconis for large N (uses weighted IQR), and an integer-friendly mode that gives one bin per value when the range is small and every value is integer.
+- **Mobile / focus-mode breakpoints**: at viewports below 300×200 the visual drops axis titles, shrinks margins, and skips the help icon.
+- **Print/PDF export fidelity**: animations now run on the very first render only and are skipped on every subsequent update so PDF exports never capture a half-tweened frame.
+- **First-time tour overlay**: 3-step onboarding card shown on the first render. Dismiss button persists via `host.persistProperties({ tour: { dismissed: true } })`.
+
+### Tests
+- 26 Playwright harness scenarios: added Q-Q plot, box plot, mobile breakpoint, tooltip mini-chart, and tour.
+- AppSource pipeline now produces 8 screenshots (added `07-qqplot.png`, `08-boxplot.png`).
+
 ## [1.0.0.22] — 2026-05-28
 
 ### Added — design principles polish

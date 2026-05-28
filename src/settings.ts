@@ -362,6 +362,77 @@ class YAxisCard extends Card {
     slices: Slice[] = [this.title, this.numberFormat, this.labelColor, this.fontSize];
 }
 
+// ── Q-Q plot ──────────────────────────────────────────────────────────────────
+class QQPlotCard extends Card {
+    show = new formattingSettings.ToggleSwitch({
+        name: "show", displayName: undefined, value: false
+    });
+    topLevelSlice = this.show;
+
+    color = new formattingSettings.ColorPicker({
+        name: "color",
+        displayName: "Point color", displayNameKey: "QQPlot_Color_DisplayName",
+        description: "Color of Q-Q points and reference line.", descriptionKey: "QQPlot_Color_Description",
+        value: { value: "#5b5fc7" }
+    });
+
+    name: string = "qqPlot";
+    displayName: string = "Q-Q plot";
+    displayNameKey: string = "QQPlot_DisplayName";
+    description: string = "Quantile-quantile plot overlay.";
+    descriptionKey: string = "QQPlot_Description";
+    slices: Slice[] = [this.color];
+}
+
+// ── Box plot ──────────────────────────────────────────────────────────────────
+class BoxPlotCard extends Card {
+    show = new formattingSettings.ToggleSwitch({
+        name: "show", displayName: undefined, value: false
+    });
+    topLevelSlice = this.show;
+
+    color = new formattingSettings.ColorPicker({
+        name: "color",
+        displayName: "Box color", displayNameKey: "BoxPlot_Color_DisplayName",
+        description: "Box fill color.", descriptionKey: "BoxPlot_Color_Description",
+        value: { value: "#01B8AA" }
+    });
+
+    name: string = "boxPlot";
+    displayName: string = "Box plot";
+    displayNameKey: string = "BoxPlot_DisplayName";
+    description: string = "Box-and-whisker strip below the histogram.";
+    descriptionKey: string = "BoxPlot_Description";
+    slices: Slice[] = [this.color];
+}
+
+// ── Tooltip ───────────────────────────────────────────────────────────────────
+class TooltipCard extends Card {
+    miniChart = new formattingSettings.ToggleSwitch({
+        name: "miniChart",
+        displayName: "Mini chart in tooltip", displayNameKey: "Tooltip_MiniChart_DisplayName",
+        description: "Show a small histogram sketch in report-page tooltips.", descriptionKey: "Tooltip_MiniChart_Description",
+        value: false
+    });
+
+    name: string = "tooltip";
+    displayName: string = "Tooltip";
+    slices: Slice[] = [this.miniChart];
+}
+
+// ── Tour (persisted-state only, not user-facing in format pane) ───────────────
+class TourCard extends Card {
+    dismissed = new formattingSettings.ToggleSwitch({
+        name: "dismissed", displayName: undefined, value: false
+    });
+    topLevelSlice = this.dismissed;
+
+    name: string = "tour";
+    displayName: string = "Tour";
+    visible: boolean = false;
+    slices: Slice[] = [];
+}
+
 // ── Model ─────────────────────────────────────────────────────────────────────
 export class VisualFormattingSettingsModel extends Model {
     bins        = new BinsCard();
@@ -369,8 +440,12 @@ export class VisualFormattingSettingsModel extends Model {
     normalCurve = new NormalCurveCard();
     specLimits  = new SpecLimitsCard();
     referenceLines = new ReferenceLinesCard();
+    qqPlot      = new QQPlotCard();
+    boxPlot     = new BoxPlotCard();
+    tooltip     = new TooltipCard();
+    tour        = new TourCard();
     xAxis       = new XAxisCard();
     yAxis       = new YAxisCard();
 
-    cards: Card[] = [this.bins, this.bars, this.normalCurve, this.specLimits, this.referenceLines, this.xAxis, this.yAxis];
+    cards: Card[] = [this.bins, this.bars, this.normalCurve, this.specLimits, this.referenceLines, this.qqPlot, this.boxPlot, this.tooltip, this.xAxis, this.yAxis, this.tour];
 }

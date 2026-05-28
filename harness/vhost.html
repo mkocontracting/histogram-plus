@@ -208,6 +208,37 @@ const scenarios = {
       specLimits:{ show:true, lsl:42, usl:60, showLabels:true, showCpk:true, showSigma:true, showAD:true, decimals:2 }
     }
   },
+  qqPlot: {
+    values: rawValues,
+    objects: {
+      qqPlot:{ show:true },
+      tour:{ dismissed:true }
+    }
+  },
+  boxPlot: {
+    values: rawValues,
+    objects: {
+      boxPlot:{ show:true },
+      tour:{ dismissed:true }
+    }
+  },
+  mobile: {
+    values: [1,2,3,4,5,6,7,8,9],
+    objects: { tour:{ dismissed:true } },
+    viewport: { width: 220, height: 180 }
+  },
+  tooltipMini: {
+    values: rawValues,
+    objects: {
+      tooltip:{ miniChart:true },
+      tour:{ dismissed:true }
+    },
+    tooltip: true
+  },
+  tour: {
+    values: rawValues,
+    objects: { tour:{ dismissed:false } }
+  },
   appsourceDefault: {
     values: rawValues,
     objects: {
@@ -215,7 +246,8 @@ const scenarios = {
       referenceLines:{ showMean:true, showMedian:true },
       bars:{ gap:14 },
       xAxis:{ title:'Measured value', numberFormat:'.1f' },
-      yAxis:{ title:'Count', numberFormat:',.0f' }
+      yAxis:{ title:'Count', numberFormat:',.0f' },
+      tour:{ dismissed:true }
     }
   },
   appsourceAdvanced: {
@@ -226,7 +258,8 @@ const scenarios = {
       referenceLines:{ showMean:true, showMedian:true, showSd:true, sdCount:2 },
       bars:{ gap:14 },
       xAxis:{ title:'Diameter (mm)', numberFormat:'.1f' },
-      yAxis:{ title:'Frequency', numberFormat:',.0f' }
+      yAxis:{ title:'Frequency', numberFormat:',.0f' },
+      tour:{ dismissed:true }
     }
   },
   appsourceDark: {
@@ -237,7 +270,8 @@ const scenarios = {
       referenceLines:{ showMean:true, showSd:true, sdCount:2, color:{ solid:{ color:'#cfd8dc' } } },
       bars:{ fill:{ solid:{ color:'#01b8aa' } }, stroke:{ solid:{ color:'#0d1117' } }, fillOpacity:90, gap:14 },
       xAxis:{ title:'Measured value', numberFormat:'.1f', labelColor:{ solid:{ color:'#e6edf3' } } },
-      yAxis:{ title:'Count', numberFormat:',.0f', labelColor:{ solid:{ color:'#e6edf3' } } }
+      yAxis:{ title:'Count', numberFormat:',.0f', labelColor:{ solid:{ color:'#e6edf3' } } },
+      tour:{ dismissed:true }
     },
     darkBackground: true
   },
@@ -252,7 +286,8 @@ const scenarios = {
       referenceLines:{ showMean:true, showSd:true, sdCount:2 },
       bars:{ gap:14 },
       xAxis:{ title:'Measured value', numberFormat:'.1f' },
-      yAxis:{ title:'Count', numberFormat:',.0f' }
+      yAxis:{ title:'Count', numberFormat:',.0f' },
+      tour:{ dismissed:true }
     }
   },
   appsourceCapability: {
@@ -263,7 +298,32 @@ const scenarios = {
       referenceLines:{ showMean:true, showSd:true, sdCount:2 },
       bars:{ gap:14 },
       xAxis:{ title:'Diameter (mm)', numberFormat:'.1f' },
-      yAxis:{ title:'Count', numberFormat:',.0f' }
+      yAxis:{ title:'Count', numberFormat:',.0f' },
+      tour:{ dismissed:true }
+    }
+  },
+  appsourceQQ: {
+    values: rawValues,
+    objects: {
+      normalCurve:{ show:true },
+      qqPlot:{ show:true },
+      referenceLines:{ showMean:true },
+      bars:{ gap:14 },
+      xAxis:{ title:'Diameter (mm)', numberFormat:'.1f' },
+      yAxis:{ title:'Count', numberFormat:',.0f' },
+      tour:{ dismissed:true }
+    }
+  },
+  appsourceBoxPlot: {
+    values: rawValues,
+    objects: {
+      normalCurve:{ show:true },
+      boxPlot:{ show:true },
+      referenceLines:{ showMean:true, showMedian:true },
+      bars:{ gap:14 },
+      xAxis:{ title:'Diameter (mm)', numberFormat:'.1f' },
+      yAxis:{ title:'Count', numberFormat:',.0f' },
+      tour:{ dismissed:true }
     }
   },
   appsourceLargeDataset: {
@@ -287,7 +347,8 @@ const scenarios = {
       bins:{ mode:'count', count:40 },
       bars:{ gap:4 },
       xAxis:{ title:'Sample value', numberFormat:'.1f' },
-      yAxis:{ title:'Count', numberFormat:',.0f' }
+      yAxis:{ title:'Count', numberFormat:',.0f' },
+      tour:{ dismissed:true }
     }
   }
 };
@@ -295,8 +356,8 @@ const scenarios = {
 const params = new URLSearchParams(location.search);
 const scenarioName = params.get('scenario') || 'default';
 const scenario = scenarios[scenarioName] || scenarios.default;
-const hostW = Number(params.get('w')) || 660;
-const hostH = Number(params.get('h')) || 440;
+const hostW = Number(params.get('w')) || scenario.viewport?.width || 660;
+const hostH = Number(params.get('h')) || scenario.viewport?.height || 440;
 const hostEl = document.getElementById('host');
 hostEl.style.width = `${hostW}px`;
 hostEl.style.height = `${hostH}px`;

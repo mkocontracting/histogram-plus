@@ -13,9 +13,9 @@ function loadResjson(locale) {
 }
 
 function injectLocStrings(htmlPath) {
-  const enUs = loadResjson('en-US');
-  const nlNl = loadResjson('nl-NL');
-  const injection = `<script>window.__resStrings = ${JSON.stringify({ 'en-US': enUs, 'nl-NL': nlNl })};\n` +
+  const locales = ['en-US', 'nl-NL', 'de-DE', 'fr-FR', 'es-ES', 'zh-CN'];
+  const bundle = Object.fromEntries(locales.map(l => [l, loadResjson(l)]));
+  const injection = `<script>window.__resStrings = ${JSON.stringify(bundle)};\n` +
     `window.__locStrings = window.__resStrings['en-US'];</script>`;
   let html = fs.readFileSync(htmlPath, 'utf8');
   html = html.replace('<body>', `<body>\n${injection}`);
@@ -43,7 +43,12 @@ const scenarios = [
   { name: 'single', bars: true },
   { name: 'negative', bars: true, referenceLines: true },
   { name: 'noData', landing: true },
-  { name: 'capabilityExtras', bars: true, capability: true, capabilityExtra: 2 }
+  { name: 'capabilityExtras', bars: true, capability: true, capabilityExtra: 2 },
+  { name: 'qqPlot', bars: true, qqPoints: true },
+  { name: 'boxPlot', bars: true, boxPlot: true },
+  { name: 'mobile', bars: true, mobile: true },
+  { name: 'tooltipMini', bars: true, tooltip: true, miniChart: true },
+  { name: 'tour', bars: true, tour: true }
 ];
 
 function assert(condition, message) {
@@ -85,6 +90,10 @@ function assert(condition, message) {
         referenceLineXs: Array.from(document.querySelectorAll('.reference-line')).map(el => Number(el.getAttribute('x1'))),
         lineLabels: document.querySelectorAll('.line-label').length,
         capability: document.querySelectorAll('.capability-label').length,
+        qqPoints: document.querySelectorAll('.qq-point').length,
+        boxPlots: document.querySelectorAll('.box-plot').length,
+        tours: document.querySelectorAll('.tour').length,
+        tooltipServiceCalled: typeof window.tooltipShown === 'undefined' ? 0 : window.tooltipShown,
         capabilityExtra: document.querySelectorAll('.capability-extra').length,
         capabilityText: document.querySelector('.capability-label')?.textContent || '',
         capabilityExtraText: Array.from(document.querySelectorAll('.capability-extra')).map(el => el.textContent || ''),
@@ -224,6 +233,13 @@ function assert(condition, message) {
         assert(highlighted > 0, `${scenario.name}: highlight scenario rendered no visible highlight height`);
       }
       if (scenario.message) assert(result.message === scenario.message, `${scenario.name}: expected message "${scenario.message}", got "${result.message}"`);
+      if (scenario.qqPoints) assert(result.qqPoints > 0, `${scenario.name}: expected Q-Q points`);
+      if (scenario.boxPlot) assert(result.boxPlots > 0, `${scenario.name}: expected box plot group`);
+      if (scenario.mobile) {
+        const titles = await page.$$eval('.axis-title', els => els.length);
+        assert(titles === 0, `${scenario.name}: expected axis titles to be dropped at narrow viewport, got ${titles}`);
+      }
+      if (scenario.tour) assert(result.tours > 0, `${scenario.name}: expected tour overlay`);
       if (scenario.landing) {
         assert(result.landingNodes > 0, `${scenario.name}: custom landing page should render`);
         assert(result.landingTitle === 'Histogram+', `${scenario.name}: expected Histogram+ landing title, got "${result.landingTitle}"`);

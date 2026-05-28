@@ -94,6 +94,8 @@ export class Visual implements IVisual {
     private formattingSettingsService: FormattingSettingsService;
     private allowInteractions: boolean;
     private lastData: HistogramData | null = null;
+    private currentViewMode: powerbi.ViewMode = 0; // ViewMode.View
+    private hasRenderedOnce: boolean = false;
 
     constructor(options: VisualConstructorOptions) {
         this.host = options.host;
@@ -134,6 +136,7 @@ export class Visual implements IVisual {
         const width = options.viewport?.width ?? 0;
         const height = options.viewport?.height ?? 0;
         this.locale = this.host.locale || this.locale;
+        this.currentViewMode = options.viewMode ?? 0;
 
         const dataView = options.dataViews?.[0];
 
@@ -159,6 +162,7 @@ export class Visual implements IVisual {
         if (!data.hasCategory) {
             this.renderLandingPage(width, height);
             this.events.renderingFinished(options);
+            this.hasRenderedOnce = true;
             return;
         }
 
@@ -166,6 +170,7 @@ export class Visual implements IVisual {
             if (data.values.length === 0) {
                 this.renderEmptyMessage(width, height, this.t("Visual_Empty_NoNumeric"));
                 this.events.renderingFinished(options);
+            this.hasRenderedOnce = true;
                 return;
             }
             if (dataView?.metadata?.segment) {
@@ -174,6 +179,7 @@ export class Visual implements IVisual {
             const bins = this.computeBins(data);
             this.renderHistogram(bins, data, dataView, width, height);
             this.events.renderingFinished(options);
+            this.hasRenderedOnce = true;
         }
         catch (error) {
             this.svg.selectAll("*").remove();
@@ -259,15 +265,28 @@ export class Visual implements IVisual {
                 edges.push(max);
             }
         } else {
-            // auto — Sturges count, with "nice" round boundaries that align to the data grid
-            const target = Math.max(1, Math.ceil(Math.log2(data.total)) + 1);
+            // auto — adaptive: Sturges for small N, Freedman-Diaconis for large/skewed N, and
+            // an integer-friendly path when all values are integers within a small range.
+            const allInteger = values.every(v => Number.isInteger(v));
+            const range = max - min;
+            const sturges = Math.max(1, Math.ceil(Math.log2(data.total)) + 1);
+            let target = sturges;
+            if (allInteger && range <= 60) {
+                target = Math.min(range + 1, 30);
+            } else if (data.total >= 200) {
+                const iqr = this.iqr(values, weights, data.total);
+                if (iqr > 0) {
+                    const fd = (2 * iqr) / Math.cbrt(data.total);
+                    const fdCount = Math.max(1, Math.ceil(range / fd));
+                    target = Math.min(60, Math.max(sturges, fdCount));
+                }
+            }
             if (customRange) {
                 const step = (max - min) / target;
                 edges = d3.range(0, target + 1).map(i => min + i * step);
             } else {
                 const niceScale = d3.scaleLinear().domain([min, max]).nice(target);
                 edges = niceScale.ticks(target);
-                // Guard: ensure edges fully span the data range
                 if (edges.length < 2 || edges[0] > min) edges.unshift(niceScale.domain()[0]);
                 if (edges[edges.length - 1] < max) edges.push(niceScale.domain()[1]);
             }
@@ -340,13 +359,18 @@ export class Visual implements IVisual {
         const bars = this.formattingSettings.bars;
         const xAxisCard = this.formattingSettings.xAxis;
         const yAxisCard = this.formattingSettings.yAxis;
-        const xTitle = xAxisCard.title.value.trim();
-        const yTitle = yAxisCard.title.value.trim();
+        // Mobile / focus-mode breakpoints: shrink margins and drop axis titles when there's no room.
+        const compact = width < 300 || height < 200;
+        const xTitle = compact ? "" : xAxisCard.title.value.trim();
+        const yTitle = compact ? "" : yAxisCard.title.value.trim();
+        const boxPlotCard = this.formattingSettings.boxPlot;
+        const qqPlotCard = this.formattingSettings.qqPlot;
+        const boxPlotHeight = boxPlotCard.show.value ? (compact ? 14 : 22) : 0;
         const margin = {
-            top: 14,
-            right: 16,
-            bottom: xAxisCard.show.value && xTitle ? 54 : 36,
-            left: yAxisCard.show.value && yTitle ? 60 : 44
+            top: compact ? 6 : 14,
+            right: compact ? 6 : 16,
+            bottom: (xAxisCard.show.value && xTitle ? 54 : 36) + boxPlotHeight,
+            left: compact ? (yAxisCard.show.value && yTitle ? 40 : 28) : (yAxisCard.show.value && yTitle ? 60 : 44)
         };
         const innerW = Math.max(0, width - margin.left - margin.right);
         const innerH = Math.max(0, height - margin.top - margin.bottom);
@@ -465,6 +489,15 @@ export class Visual implements IVisual {
                 .attr("height", d => innerH - yScale(d.count));
         }
 
+        const tooltipCard = this.formattingSettings.tooltip;
+        const includeMiniChart = tooltipCard.miniChart.value;
+        const miniChartLine = () => {
+            if (!includeMiniChart) return [];
+            const counts = bins.map(b => b.count);
+            const maxCount = Math.max(...counts, 1);
+            const sketch = counts.map(c => c === 0 ? " " : "▁▂▃▄▅▆▇█".charAt(Math.min(7, Math.floor((c / maxCount) * 7))));
+            return [{ displayName: " ", value: sketch.join("") }];
+        };
         this.tooltipServiceWrapper.addTooltip<Bin>(
             barSelection,
             (bin: Bin) => [
@@ -473,6 +506,7 @@ export class Visual implements IVisual {
                 ...(bin.underflowCount > 0 ? [{ displayName: this.t("Tooltip_Underflow"), value: this.formatNumber(bin.underflowCount, yAxisCard.numberFormat.value) }] : []),
                 ...(bin.overflowCount > 0 ? [{ displayName: this.t("Tooltip_Overflow"), value: this.formatNumber(bin.overflowCount, yAxisCard.numberFormat.value) }] : []),
                 ...(hasHighlights ? [{ displayName: this.t("Tooltip_Highlighted"), value: this.formatNumber(bin.highlightCount, yAxisCard.numberFormat.value) }] : []),
+                ...miniChartLine(),
             ]
         );
 
@@ -576,6 +610,22 @@ export class Visual implements IVisual {
 
         if (lineLabels.length > 0) {
             this.drawLineLabels(g, lineLabels, innerW);
+        }
+
+        // Q-Q plot overlay
+        if (qqPlotCard.show.value && stats.sd > 0 && data.total >= 4) {
+            this.drawQQPlot(g, stats, data, xScale, innerH, isHC, colors.foreground, qqPlotCard.color.value.value);
+        }
+
+        // Box plot strip below the x-axis (and below the title if present)
+        if (boxPlotCard.show.value && data.total >= 4) {
+            const axisBaseline = (xAxisCard.show.value && xTitle) ? 52 : 32;
+            this.drawBoxPlot(g, data, xScale, innerH + axisBaseline, boxPlotHeight, isHC, colors.foreground, boxPlotCard.color.value.value);
+        }
+
+        // First-time onboarding overlay (dismissable, persisted via formatting object)
+        if (innerW > 240 && innerH > 160 && !this.formattingSettings.tour.dismissed.value && !this.hasRenderedOnce) {
+            this.drawTour(g, innerW, innerH, isHC ? colors.foreground : "#5b5fc7");
         }
 
         // Smart hint: discrete integer data without a Frequency measure is likely
@@ -824,6 +874,21 @@ export class Visual implements IVisual {
     private formatDPMO(dpmo: number): string {
         if (dpmo >= 1000) return this.formatNumber(Math.round(dpmo), ",d");
         return dpmo.toFixed(1);
+    }
+
+    private iqr(values: number[], weights: number[], total: number): number {
+        const pairs = values.map((value, i) => ({ value, weight: weights[i] }))
+            .sort((a, b) => a.value - b.value);
+        const quantile = (q: number): number => {
+            const target = total * q;
+            let cumulative = 0;
+            for (const pair of pairs) {
+                cumulative += pair.weight;
+                if (cumulative >= target) return pair.value;
+            }
+            return pairs[pairs.length - 1]?.value ?? 0;
+        };
+        return quantile(0.75) - quantile(0.25);
     }
 
     private normalCdf(z: number): number {
@@ -1273,6 +1338,227 @@ export class Visual implements IVisual {
         return this.formattingSettingsService.buildFormattingModel(this.formattingSettings);
     }
 
+    private drawQQPlot(
+        g: d3.Selection<SVGGElement, unknown, null, undefined>,
+        stats: HistogramStats,
+        data: HistogramData,
+        xScale: d3.ScaleLinear<number, number>,
+        innerH: number,
+        isHC: boolean,
+        hcColor: string,
+        color: string
+    ): void {
+        // Plot sample quantiles against theoretical normal quantiles, scaled to fit
+        // inside the histogram canvas: x is the data value, y is normalized to a
+        // dedicated band in the top-right corner so it overlays without occluding bars.
+        const expanded: number[] = [];
+        for (let i = 0; i < data.values.length; i++) {
+            const w = Math.round(data.weights[i]);
+            for (let k = 0; k < w; k++) expanded.push(data.values[i]);
+        }
+        if (expanded.length < 4) return;
+        expanded.sort((a, b) => a - b);
+        const n = expanded.length;
+        const pts: [number, number][] = expanded.map((v, i) => {
+            const p = (i + 0.5) / n;
+            const theoreticalZ = this.normalInverseCdf(p);
+            const expectedValue = stats.mean + stats.sd * theoreticalZ;
+            return [xScale(v), expectedValue];
+        });
+        const ys = pts.map(p => p[1]);
+        const yMin = Math.min(...ys);
+        const yMax = Math.max(...ys);
+        const panelH = Math.min(80, innerH * 0.35);
+        const panelTop = 6;
+        const yPanel = d3.scaleLinear().domain([yMin, yMax]).range([panelTop + panelH, panelTop]);
+        const stroke = isHC ? hcColor : color;
+        const qq = g.append("g").classed("qq-plot", true).attr("pointer-events", "none");
+        // 45-degree reference line: from (sampleMin, yMin) to (sampleMax, yMax)
+        qq.append("line")
+            .attr("x1", xScale(expanded[0]))
+            .attr("y1", yPanel(yMin))
+            .attr("x2", xScale(expanded[n - 1]))
+            .attr("y2", yPanel(yMax))
+            .attr("stroke", stroke)
+            .attr("stroke-width", 1)
+            .attr("stroke-dasharray", "2,2")
+            .attr("opacity", 0.6);
+        qq.selectAll("circle.qq-point")
+            .data(pts)
+            .enter()
+            .append("circle")
+            .classed("qq-point", true)
+            .attr("cx", p => p[0])
+            .attr("cy", p => yPanel(p[1]))
+            .attr("r", 2)
+            .attr("fill", stroke)
+            .attr("opacity", 0.8);
+    }
+
+    private drawBoxPlot(
+        g: d3.Selection<SVGGElement, unknown, null, undefined>,
+        data: HistogramData,
+        xScale: d3.ScaleLinear<number, number>,
+        baselineY: number,
+        boxHeight: number,
+        isHC: boolean,
+        hcColor: string,
+        color: string
+    ): void {
+        const pairs = data.values.map((value, i) => ({ value, weight: data.weights[i] }))
+            .sort((a, b) => a.value - b.value);
+        const q = (target: number): number => {
+            let cumulative = 0;
+            for (const pair of pairs) {
+                cumulative += pair.weight;
+                if (cumulative >= target) return pair.value;
+            }
+            return pairs[pairs.length - 1]?.value ?? 0;
+        };
+        const total = data.total;
+        const q1 = q(total * 0.25);
+        const median = q(total * 0.5);
+        const q3 = q(total * 0.75);
+        const iqr = q3 - q1;
+        const lowerFence = q1 - 1.5 * iqr;
+        const upperFence = q3 + 1.5 * iqr;
+        const min = pairs.find(p => p.value >= lowerFence)?.value ?? pairs[0].value;
+        const max = [...pairs].reverse().find(p => p.value <= upperFence)?.value ?? pairs[pairs.length - 1].value;
+        const cy = baselineY + boxHeight / 2;
+        const halfH = boxHeight / 2;
+        const fill = isHC ? "transparent" : color;
+        const stroke = isHC ? hcColor : "#444444";
+        const box = g.append("g").classed("box-plot", true).attr("pointer-events", "none");
+        // whiskers
+        box.append("line")
+            .attr("x1", xScale(min)).attr("x2", xScale(max))
+            .attr("y1", cy).attr("y2", cy)
+            .attr("stroke", stroke).attr("stroke-width", 1);
+        // whisker caps
+        [min, max].forEach(v => {
+            box.append("line")
+                .attr("x1", xScale(v)).attr("x2", xScale(v))
+                .attr("y1", cy - halfH * 0.6).attr("y2", cy + halfH * 0.6)
+                .attr("stroke", stroke).attr("stroke-width", 1);
+        });
+        // box
+        box.append("rect")
+            .attr("x", xScale(q1))
+            .attr("y", cy - halfH)
+            .attr("width", Math.max(1, xScale(q3) - xScale(q1)))
+            .attr("height", boxHeight)
+            .attr("fill", fill)
+            .attr("fill-opacity", 0.45)
+            .attr("stroke", stroke)
+            .attr("stroke-width", 1);
+        // median
+        box.append("line")
+            .attr("x1", xScale(median)).attr("x2", xScale(median))
+            .attr("y1", cy - halfH).attr("y2", cy + halfH)
+            .attr("stroke", stroke).attr("stroke-width", 2);
+    }
+
+    private drawTour(
+        g: d3.Selection<SVGGElement, unknown, null, undefined>,
+        innerW: number,
+        innerH: number,
+        accent: string
+    ): void {
+        const panelW = Math.min(260, innerW - 40);
+        const panelH = 110;
+        const x = innerW - panelW - 12;
+        const y = innerH - panelH - 18;
+        const tour = g.append("g").classed("tour", true).attr("transform", `translate(${x},${y})`);
+        tour.append("rect")
+            .attr("width", panelW)
+            .attr("height", panelH)
+            .attr("rx", 6)
+            .attr("fill", "#ffffff")
+            .attr("fill-opacity", 0.94)
+            .attr("stroke", accent)
+            .attr("stroke-width", 1);
+        const steps = [this.t("Tour_Step1"), this.t("Tour_Step2"), this.t("Tour_Step3")];
+        steps.forEach((text, i) => {
+            const yLine = 22 + i * 22;
+            tour.append("circle")
+                .attr("cx", 14).attr("cy", yLine - 4).attr("r", 7)
+                .attr("fill", accent);
+            tour.append("text")
+                .attr("x", 14).attr("y", yLine)
+                .attr("text-anchor", "middle")
+                .attr("fill", "#ffffff")
+                .attr("font-size", "9px")
+                .attr("font-weight", "700")
+                .text(String(i + 1));
+            tour.append("text")
+                .attr("x", 28).attr("y", yLine)
+                .attr("fill", "#1f2937")
+                .attr("font-size", "10px")
+                .text(text);
+        });
+        const dismiss = tour.append("g")
+            .attr("transform", `translate(${panelW - 14},10)`)
+            .attr("cursor", "pointer")
+            .attr("role", "button")
+            .attr("aria-label", this.t("Tour_Dismiss"))
+            .attr("tabindex", "0");
+        dismiss.append("circle").attr("r", 8).attr("fill", "transparent").attr("stroke", accent);
+        dismiss.append("text")
+            .attr("text-anchor", "middle")
+            .attr("dominant-baseline", "central")
+            .attr("font-size", "10px")
+            .attr("fill", accent)
+            .text("×");
+        const persistDismiss = () => {
+            try {
+                this.host.persistProperties({
+                    merge: [{
+                        objectName: "tour",
+                        selector: undefined,
+                        properties: { dismissed: true }
+                    }]
+                });
+            } catch { /* host may disallow persist in some embed contexts */ }
+        };
+        dismiss.on("click", persistDismiss);
+        dismiss.on("keydown", (event: KeyboardEvent) => {
+            if (event.key === "Enter" || event.key === " ") {
+                persistDismiss();
+                event.preventDefault();
+            }
+        });
+    }
+
+    private normalInverseCdf(p: number): number {
+        // Beasley-Springer-Moro approximation of Φ⁻¹.
+        if (p <= 0) return -Infinity;
+        if (p >= 1) return Infinity;
+        const a = [-3.969683028665376e+01, 2.209460984245205e+02, -2.759285104469687e+02,
+            1.383577518672690e+02, -3.066479806614716e+01, 2.506628277459239e+00];
+        const b = [-5.447609879822406e+01, 1.615858368580409e+02, -1.556989798598866e+02,
+            6.680131188771972e+01, -1.328068155288572e+01];
+        const c = [-7.784894002430293e-03, -3.223964580411365e-01, -2.400758277161838e+00,
+            -2.549732539343734e+00, 4.374664141464968e+00, 2.938163982698783e+00];
+        const d = [7.784695709041462e-03, 3.224671290700398e-01, 2.445134137142996e+00,
+            3.754408661907416e+00];
+        const pLow = 0.02425, pHigh = 1 - pLow;
+        let q: number, r: number;
+        if (p < pLow) {
+            q = Math.sqrt(-2 * Math.log(p));
+            return (((((c[0]*q + c[1])*q + c[2])*q + c[3])*q + c[4])*q + c[5]) /
+                   ((((d[0]*q + d[1])*q + d[2])*q + d[3])*q + 1);
+        }
+        if (p <= pHigh) {
+            q = p - 0.5;
+            r = q * q;
+            return (((((a[0]*r + a[1])*r + a[2])*r + a[3])*r + a[4])*r + a[5]) * q /
+                   (((((b[0]*r + b[1])*r + b[2])*r + b[3])*r + b[4])*r + 1);
+        }
+        q = Math.sqrt(-2 * Math.log(1 - p));
+        return -(((((c[0]*q + c[1])*q + c[2])*q + c[3])*q + c[4])*q + c[5]) /
+                ((((d[0]*q + d[1])*q + d[2])*q + d[3])*q + 1);
+    }
+
     private drawHelpIcon(
         g: d3.Selection<SVGGElement, unknown, null, undefined>,
         innerW: number,
@@ -1351,7 +1637,11 @@ export class Visual implements IVisual {
                 }
             }
         } catch { /* ignore matchMedia errors in sandboxed hosts */ }
-        return !this.host.colorPalette.isHighContrast;
+        if (this.host.colorPalette.isHighContrast) return false;
+        // Skip animations after the first render — keeps subsequent slicer/filter
+        // updates snappy and avoids capturing mid-tween frames during PDF/PNG export.
+        if (this.hasRenderedOnce) return false;
+        return true;
     }
 
     private handleArrowNav(event: KeyboardEvent, bins: Bin[]): void {

@@ -138,5 +138,26 @@
     "YAxis_LabelColor_DisplayName": "Label color",
     "YAxis_LabelColor_Description": "Color of tick labels and axis title.",
     "YAxis_FontSize_DisplayName": "Font size",
-    "YAxis_FontSize_Description": "Font size of axis tick labels in pixels."
+    "YAxis_FontSize_Description": "Font size of axis tick labels in pixels.",
+
+    "Help_AriaLabel": "Help",
+    "Tour_Dismiss": "Dismiss tour",
+    "Tour_Step1": "Tune bins and the axis range in the Format pane.",
+    "Tour_Step2": "Turn on spec limits and Cp/Cpk for process analysis.",
+    "Tour_Step3": "Arrow keys move focus between bars; Enter selects.",
+
+    "QQPlot_DisplayName": "Q-Q plot",
+    "QQPlot_Description": "Quantile-quantile plot overlay to assess normality at a glance.",
+    "QQPlot_Show_DisplayName": "Show",
+    "QQPlot_Color_DisplayName": "Point color",
+    "QQPlot_Color_Description": "Color of Q-Q points and reference line.",
+
+    "BoxPlot_DisplayName": "Box plot",
+    "BoxPlot_Description": "A small box-and-whisker strip below the histogram.",
+    "BoxPlot_Show_DisplayName": "Show",
+    "BoxPlot_Color_DisplayName": "Box color",
+    "BoxPlot_Color_Description": "Fill color of the box.",
+
+    "Tooltip_MiniChart_DisplayName": "Mini chart in tooltip",
+    "Tooltip_MiniChart_Description": "Show a small histogram sketch inside report-page tooltips."
 }

@@ -13,9 +13,9 @@ function loadResjson(locale) {
 }
 
 function injectLocStrings(htmlPath) {
-  const enUs = loadResjson('en-US');
-  const nlNl = loadResjson('nl-NL');
-  const injection = `<script>window.__resStrings = ${JSON.stringify({ 'en-US': enUs, 'nl-NL': nlNl })};\n` +
+  const locales = ['en-US', 'nl-NL', 'de-DE', 'fr-FR', 'es-ES', 'zh-CN'];
+  const bundle = Object.fromEntries(locales.map(l => [l, loadResjson(l)]));
+  const injection = `<script>window.__resStrings = ${JSON.stringify(bundle)};\n` +
     `window.__locStrings = window.__resStrings['en-US'];</script>`;
   let html = fs.readFileSync(htmlPath, 'utf8');
   html = html.replace('<body>', `<body>\n${injection}`);
@@ -33,7 +33,9 @@ const scenarios = [
   { name: 'appsourceDark',           out: '03-dark-theme.png',     caption: 'Dark report theme' },
   { name: 'appsourceHighContrast',   out: '04-high-contrast.png',  caption: 'Power BI high-contrast mode' },
   { name: 'appsourceLargeDataset',   out: '05-large-dataset.png',  caption: '2,000 samples, 40 bins' },
-  { name: 'appsourceCapability',     out: '06-capability.png',     caption: 'Sigma level, DPMO, Anderson-Darling p-value' }
+  { name: 'appsourceCapability',     out: '06-capability.png',     caption: 'Sigma level, DPMO, Anderson-Darling p-value' },
+  { name: 'appsourceQQ',             out: '07-qqplot.png',         caption: 'Q-Q plot overlay for normality assessment' },
+  { name: 'appsourceBoxPlot',        out: '08-boxplot.png',        caption: 'Box plot strip with histogram' }
 ];
 
 (async () => {

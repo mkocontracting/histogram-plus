@@ -1,7 +1,7 @@
 {
   "name": "histogram-plus",
   "description": "Histogram+ — manual bin control, normal curve overlay, LSL/USL spec limits, Cp/Cpk",
-  "version": "1.0.0.22",
+  "version": "1.0.0.23",
   "repository": {
     "type": "git",
     "url": "https://github.com/mkocontracting/histogram-plus.git"
