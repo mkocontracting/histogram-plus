@@ -2,6 +2,14 @@
 
 Histogram+ is a Power BI custom visual for numeric distributions with manual bin control, standard `[x)` intervals, exact x-axis bounds, normal curve overlay, LSL/USL spec limits, target line, Cp/Cpk, and reference lines.
 
+## Privacy
+
+Histogram+ stores no data, sends no telemetry, and makes no external network calls. The visual runs entirely inside the Power BI sandbox using only the data the report passes to it. `capabilities.json` declares `privileges: []`. The source is unminified and available in this repository for review.
+
+## Support
+
+Report bugs or request features at https://github.com/mkocontracting/histogram-plus/issues.
+
 ## Features
 
 - Histogram rendering.

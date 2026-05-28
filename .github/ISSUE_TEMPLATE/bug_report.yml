@@ -1,0 +1,52 @@
+name: Bug report
+description: Something in Histogram+ is broken or behaves unexpectedly
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug report. Please fill in as much of the form as you can so the issue can be reproduced.
+  - type: input
+    id: visual-version
+    attributes:
+      label: Histogram+ version
+      description: The embedded visual version, e.g. `1.0.0.20`. You can see it in the Power BI Desktop visual properties.
+      placeholder: "1.0.0.20"
+    validations:
+      required: true
+  - type: input
+    id: pbi-version
+    attributes:
+      label: Power BI Desktop version (or "Service")
+      placeholder: "2.144.756.0 64-bit (May 2026)"
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did the visual do, and what did you expect it to do instead?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: A minimal step-by-step list. If possible, attach a small sample `.pbix` or describe the data shape (column types, value range, row count, Frequency field used or not).
+      placeholder: |
+        1. Drag column X to Values
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: Screenshot or video
+      description: Drag and drop images here. Highlight where the problem is.
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else
+      description: Locale, high-contrast mode, focus mode, mobile vs desktop, theme, anything that might matter.

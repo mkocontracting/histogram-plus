@@ -201,6 +201,77 @@ const scenarios = {
   noData: {
     noData: true,
     values: []
+  },
+  appsourceDefault: {
+    values: rawValues,
+    objects: {
+      normalCurve:{ show:true },
+      referenceLines:{ showMean:true, showMedian:true },
+      bars:{ gap:14 },
+      xAxis:{ title:'Measured value', numberFormat:'.1f' },
+      yAxis:{ title:'Count', numberFormat:',.0f' }
+    }
+  },
+  appsourceAdvanced: {
+    values: rawValues,
+    objects: {
+      normalCurve:{ show:true },
+      specLimits:{ show:true, lsl:42, usl:60, showLabels:true, showTarget:true, target:51, showCpk:true, decimals:3 },
+      referenceLines:{ showMean:true, showMedian:true, showSd:true, sdCount:2 },
+      bars:{ gap:14 },
+      xAxis:{ title:'Diameter (mm)', numberFormat:'.1f' },
+      yAxis:{ title:'Frequency', numberFormat:',.0f' }
+    }
+  },
+  appsourceDark: {
+    values: rawValues,
+    objects: {
+      normalCurve:{ show:true, color:{ solid:{ color:'#5ec8c0' } } },
+      specLimits:{ show:true, lsl:42, usl:60, showLabels:true, showCpk:true, decimals:2, color:{ solid:{ color:'#ff8a80' } } },
+      referenceLines:{ showMean:true, showSd:true, sdCount:2, color:{ solid:{ color:'#cfd8dc' } } },
+      bars:{ fill:{ solid:{ color:'#01b8aa' } }, stroke:{ solid:{ color:'#0d1117' } }, fillOpacity:90, gap:14 },
+      xAxis:{ title:'Measured value', numberFormat:'.1f', labelColor:{ solid:{ color:'#e6edf3' } } },
+      yAxis:{ title:'Count', numberFormat:',.0f', labelColor:{ solid:{ color:'#e6edf3' } } }
+    },
+    darkBackground: true
+  },
+  appsourceHighContrast: {
+    values: rawValues,
+    highContrast: true,
+    hcForeground: '#ffff00',
+    hcBackground: '#000000',
+    objects: {
+      normalCurve:{ show:true },
+      specLimits:{ show:true, lsl:42, usl:60, showLabels:true, showCpk:true, decimals:2 },
+      referenceLines:{ showMean:true, showSd:true, sdCount:2 },
+      bars:{ gap:14 },
+      xAxis:{ title:'Measured value', numberFormat:'.1f' },
+      yAxis:{ title:'Count', numberFormat:',.0f' }
+    }
+  },
+  appsourceLargeDataset: {
+    values: (() => {
+      // 2000 samples ~ Normal(50, 7) with mild skew
+      const result = [];
+      let seed = 42;
+      const rand = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+      for (let i = 0; i < 2000; i++) {
+        const u1 = rand() || 1e-9;
+        const u2 = rand();
+        const z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+        result.push(50 + z * 7 + (rand() - 0.5) * 1.5);
+      }
+      return result;
+    })(),
+    objects: {
+      normalCurve:{ show:true },
+      specLimits:{ show:true, lsl:35, usl:65, showLabels:true, showCpk:true, decimals:3 },
+      referenceLines:{ showMean:true, showMedian:true, showSd:true, sdCount:3 },
+      bins:{ mode:'count', count:40 },
+      bars:{ gap:4 },
+      xAxis:{ title:'Sample value', numberFormat:'.1f' },
+      yAxis:{ title:'Count', numberFormat:',.0f' }
+    }
   }
 };
 
@@ -209,8 +280,20 @@ const scenarioName = params.get('scenario') || 'default';
 const scenario = scenarios[scenarioName] || scenarios.default;
 const hostW = Number(params.get('w')) || 660;
 const hostH = Number(params.get('h')) || 440;
-document.getElementById('host').style.width = `${hostW}px`;
-document.getElementById('host').style.height = `${hostH}px`;
+const hostEl = document.getElementById('host');
+hostEl.style.width = `${hostW}px`;
+hostEl.style.height = `${hostH}px`;
+if (scenario.darkBackground) {
+  document.body.style.background = '#0d1117';
+  hostEl.style.background = '#0d1117';
+  hostEl.style.border = '1px solid #1f2937';
+}
+if (scenario.highContrast) {
+  const bg = scenario.hcBackground || '#000000';
+  document.body.style.background = bg;
+  hostEl.style.background = bg;
+  hostEl.style.border = `1px solid ${scenario.hcForeground || '#ffff00'}`;
+}
 window.__scenario = scenarioName;
 window.__scenarioConfig = scenario;
 
