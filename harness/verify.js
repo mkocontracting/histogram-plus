@@ -6,6 +6,22 @@ const projectRoot = path.resolve(__dirname, '..');
 const src = path.join(projectRoot, 'harness', 'vhost.html');
 const dst = path.join(projectRoot, '.tmp', 'drop', 'vhost.html');
 
+function loadResjson(locale) {
+  const file = path.join(projectRoot, 'stringResources', locale, 'resources.resjson');
+  if (!fs.existsSync(file)) return {};
+  return JSON.parse(fs.readFileSync(file, 'utf8'));
+}
+
+function injectLocStrings(htmlPath) {
+  const enUs = loadResjson('en-US');
+  const nlNl = loadResjson('nl-NL');
+  const injection = `<script>window.__resStrings = ${JSON.stringify({ 'en-US': enUs, 'nl-NL': nlNl })};\n` +
+    `window.__locStrings = window.__resStrings['en-US'];</script>`;
+  let html = fs.readFileSync(htmlPath, 'utf8');
+  html = html.replace('<body>', `<body>\n${injection}`);
+  fs.writeFileSync(htmlPath, html);
+}
+
 const scenarios = [
   { name: 'default', bars: true, normalCurve: true, specLimits: 3, referenceLines: true, capability: true, axisTitles: true, totalCount: 150, exactBarCounts: [3, 9, 12, 13, 15, 14, 14, 12, 13, 12, 11, 12, 9, 1], capabilityText: /Cp 0\.443\s+Cpk 0\.414/, formattedTicks: true },
   { name: 'tooltip', bars: true, tooltip: true },
@@ -26,7 +42,8 @@ const scenarios = [
   { name: 'allNull', message: 'No numeric values to display' },
   { name: 'single', bars: true },
   { name: 'negative', bars: true, referenceLines: true },
-  { name: 'noData', landing: true }
+  { name: 'noData', landing: true },
+  { name: 'capabilityExtras', bars: true, capability: true, capabilityExtra: 2 }
 ];
 
 function assert(condition, message) {
@@ -34,7 +51,9 @@ function assert(condition, message) {
 }
 
 (async () => {
+  fs.mkdirSync(path.dirname(dst), { recursive: true });
   fs.copyFileSync(src, dst);
+  injectLocStrings(dst);
   const capabilities = JSON.parse(fs.readFileSync(path.join(projectRoot, 'capabilities.json'), 'utf8'));
   assert(capabilities.supportsLandingPage === true, 'capabilities: supportsLandingPage must stay enabled for the custom landing page');
   assert(capabilities.supportsEmptyDataView === true, 'capabilities: supportsEmptyDataView must stay enabled for the custom landing page');
@@ -66,7 +85,9 @@ function assert(condition, message) {
         referenceLineXs: Array.from(document.querySelectorAll('.reference-line')).map(el => Number(el.getAttribute('x1'))),
         lineLabels: document.querySelectorAll('.line-label').length,
         capability: document.querySelectorAll('.capability-label').length,
+        capabilityExtra: document.querySelectorAll('.capability-extra').length,
         capabilityText: document.querySelector('.capability-label')?.textContent || '',
+        capabilityExtraText: Array.from(document.querySelectorAll('.capability-extra')).map(el => el.textContent || ''),
         axisTitles: document.querySelectorAll('.axis-title').length,
         xTickTexts: Array.from(document.querySelectorAll('.x-axis text')).map(el => el.textContent || ''),
         yTickTexts: Array.from(document.querySelectorAll('.y-axis text')).map(el => el.textContent || ''),
@@ -88,10 +109,7 @@ function assert(condition, message) {
           width: Number(el.getAttribute('width')),
           height: Number(el.getAttribute('height'))
         })),
-        barCounts: Array.from(document.querySelectorAll('rect.bar')).map(el => {
-          const match = (el.getAttribute('aria-label') || '').match(/count ([\d,.]+)/);
-          return match ? Number(match[1].replace(/,/g, '')) : 0;
-        }),
+        barCounts: Array.from(document.querySelectorAll('rect.bar')).map(el => Number(el.getAttribute('data-count') || 0)),
         message: document.querySelector('.empty-message')?.textContent || '',
         landingNodes: document.querySelectorAll('.landing-page,.landing-title,.landing-step-text').length,
         landingTitle: document.querySelector('.landing-title')?.textContent || '',
@@ -101,6 +119,7 @@ function assert(condition, message) {
         svgHeight: Number(document.querySelector('svg.histogram-plus')?.getAttribute('height') || 0),
         aria: document.querySelector('svg.histogram-plus')?.getAttribute('aria-label') || '',
         focusedBarCount: document.querySelectorAll('rect.bar[tabindex="0"]').length,
+        rovingBarCount: document.querySelectorAll('rect.bar[tabindex="-1"]').length,
         normalCurveMetrics: (() => {
           const path = document.querySelector('.normal-curve');
           if (!path) return null;
@@ -136,7 +155,8 @@ function assert(condition, message) {
 
       if (scenario.bars) {
         assert(result.bars > 0, `${scenario.name}: expected bars`);
-        assert(result.focusedBarCount === result.bars, `${scenario.name}: bars should be focusable`);
+        assert(result.focusedBarCount === 1, `${scenario.name}: exactly one bar must hold tabindex 0 (roving), got ${result.focusedBarCount}`);
+        assert(result.focusedBarCount + result.rovingBarCount === result.bars, `${scenario.name}: every bar should be either tabindex 0 or -1`);
         const selected = await page.evaluate(() => {
           const firstBar = document.querySelector('rect.bar');
           firstBar?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
@@ -164,6 +184,7 @@ function assert(condition, message) {
       if (scenario.capability === true) assert(result.capability === 1, `${scenario.name}: expected Cp/Cpk label`);
       if (scenario.capability === false) assert(result.capability === 0, `${scenario.name}: expected no Cp/Cpk label`);
       if (scenario.capabilityText) assert(scenario.capabilityText.test(result.capabilityText), `${scenario.name}: unexpected Cp/Cpk text "${result.capabilityText}"`);
+      if (scenario.capabilityExtra !== undefined) assert(result.capabilityExtra === scenario.capabilityExtra, `${scenario.name}: expected ${scenario.capabilityExtra} extra capability lines, got ${result.capabilityExtra}`);
       if (scenario.axisTitles) assert(result.axisTitles === 2, `${scenario.name}: expected axis titles`);
       if (scenario.lineLabels !== undefined) assert(result.lineLabels === scenario.lineLabels, `${scenario.name}: expected ${scenario.lineLabels} line labels, got ${result.lineLabels}`);
       if (scenario.formattedTicks) {

@@ -5,6 +5,22 @@ const fs = require('fs');
 const projectRoot = path.resolve(__dirname, '..');
 const src = path.join(projectRoot, 'harness', 'vhost.html');
 const dst = path.join(projectRoot, '.tmp', 'drop', 'vhost.html');
+
+function loadResjson(locale) {
+  const file = path.join(projectRoot, 'stringResources', locale, 'resources.resjson');
+  if (!fs.existsSync(file)) return {};
+  return JSON.parse(fs.readFileSync(file, 'utf8'));
+}
+
+function injectLocStrings(htmlPath) {
+  const enUs = loadResjson('en-US');
+  const nlNl = loadResjson('nl-NL');
+  const injection = `<script>window.__resStrings = ${JSON.stringify({ 'en-US': enUs, 'nl-NL': nlNl })};\n` +
+    `window.__locStrings = window.__resStrings['en-US'];</script>`;
+  let html = fs.readFileSync(htmlPath, 'utf8');
+  html = html.replace('<body>', `<body>\n${injection}`);
+  fs.writeFileSync(htmlPath, html);
+}
 const outDir = path.join(projectRoot, 'harness', 'appsource');
 const oneDriveDir = '/mnt/c/Users/MKorb/OneDrive/01 Travel and work/01 MKO Contracting/04 AI stuff/AIprojects/projects/powerbi visuals/visuals/histogram-plus/appsource';
 
@@ -16,13 +32,15 @@ const scenarios = [
   { name: 'appsourceAdvanced',       out: '02-advanced.png',       caption: 'Spec limits, target, Cp/Cpk, reference lines' },
   { name: 'appsourceDark',           out: '03-dark-theme.png',     caption: 'Dark report theme' },
   { name: 'appsourceHighContrast',   out: '04-high-contrast.png',  caption: 'Power BI high-contrast mode' },
-  { name: 'appsourceLargeDataset',   out: '05-large-dataset.png',  caption: '2,000 samples, 40 bins' }
+  { name: 'appsourceLargeDataset',   out: '05-large-dataset.png',  caption: '2,000 samples, 40 bins' },
+  { name: 'appsourceCapability',     out: '06-capability.png',     caption: 'Sigma level, DPMO, Anderson-Darling p-value' }
 ];
 
 (async () => {
   fs.mkdirSync(outDir, { recursive: true });
   try { fs.mkdirSync(oneDriveDir, { recursive: true }); } catch (_) {}
   fs.copyFileSync(src, dst);
+  injectLocStrings(dst);
 
   const browser = await chromium.launch();
   try {

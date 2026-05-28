@@ -4,14 +4,38 @@ svg.histogram-plus {
 
     .bar {
         cursor: pointer;
+        transition: fill-opacity 120ms ease, stroke-width 120ms ease;
     }
 
-    .bar:focus {
+    .bar:hover {
+        fill-opacity: 1;
+    }
+
+    .bar:focus,
+    .bar:focus-visible {
         outline: none;
+        stroke: currentColor;
+        stroke-width: 2.5px;
+    }
+
+    .focus-ring {
+        fill: none;
+        stroke: currentColor;
         stroke-width: 2px;
+        stroke-dasharray: 3 2;
+        pointer-events: none;
     }
 
     text {
-        font-family: "Segoe UI", wf_segoe-ui_normal, helvetica, arial, sans-serif;
+        font-family: "Segoe UI", wf_segoe-ui_normal, system-ui, -apple-system, helvetica, arial, sans-serif;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .empty-message {
+        font-variant-numeric: normal;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .bar { transition: none; }
     }
 }

@@ -59,7 +59,7 @@ const host = {
   colorPalette, tooltipService, eventService:events,
   get locale(){ return window.__scenarioConfig?.locale || 'en-US'; },
   fetchMoreData:()=>false, persistProperties:noop, applyJsonFilter:noop,
-  createLocalizationManager:()=>({getDisplayName:(k)=>k}),
+  createLocalizationManager:()=>({getDisplayName:(k)=>window.__locStrings?.[k] || k}),
   displayWarningIcon:noop, telemetry:{trace:noop},
   hostCapabilities:{allowInteractions:true}, instanceId:'histogram-plus',
   refreshHostData:noop, switchFocusModeState:noop, isPaperVisualEnabled:()=>false
@@ -202,6 +202,12 @@ const scenarios = {
     noData: true,
     values: []
   },
+  capabilityExtras: {
+    values: rawValues,
+    objects: {
+      specLimits:{ show:true, lsl:42, usl:60, showLabels:true, showCpk:true, showSigma:true, showAD:true, decimals:2 }
+    }
+  },
   appsourceDefault: {
     values: rawValues,
     objects: {
@@ -246,6 +252,17 @@ const scenarios = {
       referenceLines:{ showMean:true, showSd:true, sdCount:2 },
       bars:{ gap:14 },
       xAxis:{ title:'Measured value', numberFormat:'.1f' },
+      yAxis:{ title:'Count', numberFormat:',.0f' }
+    }
+  },
+  appsourceCapability: {
+    values: rawValues,
+    objects: {
+      normalCurve:{ show:true },
+      specLimits:{ show:true, lsl:42, usl:60, showLabels:true, showTarget:true, target:51, showCpk:true, showSigma:true, showAD:true, decimals:3 },
+      referenceLines:{ showMean:true, showSd:true, sdCount:2 },
+      bars:{ gap:14 },
+      xAxis:{ title:'Diameter (mm)', numberFormat:'.1f' },
       yAxis:{ title:'Count', numberFormat:',.0f' }
     }
   },
@@ -296,6 +313,10 @@ if (scenario.highContrast) {
 }
 window.__scenario = scenarioName;
 window.__scenarioConfig = scenario;
+window.__skipAnimations = true;
+if (scenario.locale && window.__resStrings?.[scenario.locale]) {
+  window.__locStrings = window.__resStrings[scenario.locale];
+}
 
 const colMeta = {
   displayName:'Values', queryName:'values',

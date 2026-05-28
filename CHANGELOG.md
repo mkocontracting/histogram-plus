@@ -4,6 +4,27 @@ All notable changes to Histogram+ are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.0.22] — 2026-05-28
+
+### Added — design principles polish
+- Localization: full `nl-NL` resjson + harness mock support; every user-facing string moves to `host.createLocalizationManager().getDisplayName(key)`.
+- Locale-aware number formatting via `valueFormatter.create({ cultureSelector: host.locale })`; d3-format strings continue to work via auto-detection fallback.
+- `description` + `descriptionKey` on every settings card and slice so the format pane shows hover tooltips.
+- Themed focus ring + tabular-nums + reduced-motion CSS in `style/visual.less`.
+- New SpecLimits readouts:
+  - `Show sigma level + DPMO` — process sigma (3·Cpk) and Defects Per Million Opportunities derived via a normal-CDF approximation (Abramowitz-Stegun 26.2.17).
+  - `Show Anderson-Darling p-value` — full A² normality test with D'Agostino/Stephens p-value approximation; reads the expanded weighted sample via `lastData`.
+- Enter animation: bars grow from baseline (300 ms, easeCubicOut). Skipped under `prefers-reduced-motion: reduce` or the harness skip flag.
+- Roving tabindex: only one bar holds `tabindex="0"` at a time; arrow / Home / End move focus; `Esc` clears selection.
+- Adaptive x-axis label rotation (45°) when ticks would overlap, measured via `getComputedTextLength()`.
+- Hover and focus crosshair guides (dashed) from the focused bar to both axes.
+- Help icon (`?`) top-right that opens the GitHub README via `host.launchUrl`, keyboard-activatable.
+- Sixth AppSource screenshot `06-capability.png` showcasing sigma/DPMO/AD readout.
+
+### Changed
+- Harness mock now resolves localization via the project resjson files instead of returning keys, allowing realistic locale assertions.
+- Roving tabindex assertion replaces the previous "every bar focusable" check in the verify harness.
+
 ## [1.0.0.21] — 2026-05-28
 
 ### Added

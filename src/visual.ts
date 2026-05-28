@@ -28,6 +28,7 @@
 import powerbi from "powerbi-visuals-api";
 import { FormattingSettingsService } from "powerbi-visuals-utils-formattingmodel";
 import { ITooltipServiceWrapper, createTooltipServiceWrapper } from "powerbi-visuals-utils-tooltiputils";
+import { valueFormatter } from "powerbi-visuals-utils-formattingutils";
 import * as d3 from "d3";
 import "./../style/visual.less";
 
@@ -37,6 +38,7 @@ import IVisual = powerbi.extensibility.visual.IVisual;
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 import IVisualEventService = powerbi.extensibility.IVisualEventService;
 import ISelectionManager = powerbi.extensibility.ISelectionManager;
+import ILocalizationManager = powerbi.extensibility.ILocalizationManager;
 import ISelectionId = powerbi.visuals.ISelectionId;
 import DataView = powerbi.DataView;
 
@@ -83,20 +85,25 @@ export class Visual implements IVisual {
     private host: IVisualHost;
     private events: IVisualEventService;
     private selectionManager: ISelectionManager;
+    private localization: ILocalizationManager;
+    private locale: string;
     private target: HTMLElement;
     private svg: d3.Selection<SVGSVGElement, unknown, null, undefined>;
     private tooltipServiceWrapper: ITooltipServiceWrapper;
     private formattingSettings: VisualFormattingSettingsModel;
     private formattingSettingsService: FormattingSettingsService;
     private allowInteractions: boolean;
+    private lastData: HistogramData | null = null;
 
     constructor(options: VisualConstructorOptions) {
         this.host = options.host;
         this.events = options.host.eventService;
         this.selectionManager = options.host.createSelectionManager();
         this.tooltipServiceWrapper = createTooltipServiceWrapper(options.host.tooltipService, options.element);
-        this.formattingSettingsService = new FormattingSettingsService(options.host.createLocalizationManager());
-        this.allowInteractions = options.host.hostCapabilities.allowInteractions !== false;
+        this.localization = options.host.createLocalizationManager();
+        this.formattingSettingsService = new FormattingSettingsService(this.localization);
+        this.allowInteractions = options.host.hostCapabilities?.allowInteractions !== false;
+        this.locale = options.host.locale || "en-US";
         this.target = options.element;
 
         this.svg = d3.select(this.target)
@@ -104,7 +111,7 @@ export class Visual implements IVisual {
             .classed("histogram-plus", true)
             .attr("role", "img")
             .attr("tabindex", "0")
-            .attr("aria-label", "Histogram+ custom visual");
+            .attr("aria-label", this.t("Visual_Aria"));
 
         this.svg.on("contextmenu", (event: MouseEvent) => {
             this.selectionManager.showContextMenu({}, { x: event.clientX, y: event.clientY });
@@ -113,11 +120,20 @@ export class Visual implements IVisual {
 
     }
 
+    private t(key: string, ...params: (string | number)[]): string {
+        let value = this.localization.getDisplayName(key) || key;
+        params.forEach((p, i) => {
+            value = value.replace(`{${i}}`, String(p));
+        });
+        return value;
+    }
+
     public update(options: VisualUpdateOptions) {
         this.events.renderingStarted(options);
 
         const width = options.viewport?.width ?? 0;
         const height = options.viewport?.height ?? 0;
+        this.locale = this.host.locale || this.locale;
 
         const dataView = options.dataViews?.[0];
 
@@ -130,6 +146,7 @@ export class Visual implements IVisual {
         } catch { /* keep previous settings */ }
 
         const data = this.extractData(dataView);
+        this.lastData = data;
 
         // Keep the SVG as the single, always-interactive surface (mirrors the
         // data state, which Power BI lets the user select/drag/delete normally).
@@ -147,7 +164,7 @@ export class Visual implements IVisual {
 
         try {
             if (data.values.length === 0) {
-                this.renderEmptyMessage(width, height, "No numeric values to display");
+                this.renderEmptyMessage(width, height, this.t("Visual_Empty_NoNumeric"));
                 this.events.renderingFinished(options);
                 return;
             }
@@ -354,7 +371,7 @@ export class Visual implements IVisual {
             .attr("transform", `translate(${margin.left},${margin.top})`);
 
         if (binCountMax === 0) {
-            this.drawMessage(g, innerW, innerH, "No values in the selected x-axis range", isHC ? colors.foreground : "#666666");
+            this.drawMessage(g, innerW, innerH, this.t("Visual_Empty_NoValuesInRange"), isHC ? colors.foreground : "#666666");
             return;
         }
 
@@ -374,33 +391,49 @@ export class Visual implements IVisual {
             };
         };
 
+        const animate = this.animationsEnabled();
         const barSelection = g.selectAll("rect.bar")
             .data(bins)
             .enter()
             .append("rect")
             .classed("bar", true)
             .attr("x", d => barGeometry(d).x)
-            .attr("y", d => yScale(d.count))
+            .attr("y", animate ? innerH : d => yScale(d.count))
             .attr("width", d => barGeometry(d).width)
-            .attr("height", d => innerH - yScale(d.count))
+            .attr("height", animate ? 0 : d => innerH - yScale(d.count))
+            .attr("data-count", d => d.count)
+            .attr("data-highlight-count", d => d.highlightCount)
             .attr("fill", barFill)
             .attr("fill-opacity", hasHighlights ? Math.max(0.18, barOpacity * 0.3) : barOpacity)
             .attr("stroke", barStroke)
             .attr("stroke-width", barStrokeWidth)
-            .attr("tabindex", "0")
+            .attr("tabindex", (_d, i) => i === 0 ? "0" : "-1")
             .attr("role", "graphics-symbol")
-            .attr("aria-label", d => `Histogram bin from ${this.formatNumber(d.x0, xAxisCard.numberFormat.value)} to ${this.formatNumber(d.x1, xAxisCard.numberFormat.value)}, count ${this.formatNumber(d.count, yAxisCard.numberFormat.value)}`)
+            .attr("aria-label", d => this.t(
+                "Visual_Bar_AriaLabel",
+                this.formatNumber(d.x0, xAxisCard.numberFormat.value),
+                this.formatNumber(d.x1, xAxisCard.numberFormat.value),
+                this.formatNumber(d.count, yAxisCard.numberFormat.value)
+            ))
             .on("click", (_event: MouseEvent, d: Bin) => {
                 if (this.allowInteractions && d.selectionIds.length > 0) {
                     this.selectionManager.select(d.selectionIds, _event.ctrlKey || _event.metaKey || _event.shiftKey);
                 }
             })
             .on("keydown", (event: KeyboardEvent, d: Bin) => {
-                if (!this.allowInteractions || d.selectionIds.length === 0) {
+                if (!this.allowInteractions) {
                     return;
                 }
-                if (event.key === "Enter" || event.key === " ") {
+                if ((event.key === "Enter" || event.key === " ") && d.selectionIds.length > 0) {
                     this.selectionManager.select(d.selectionIds, event.ctrlKey || event.metaKey || event.shiftKey);
+                    event.preventDefault();
+                    return;
+                }
+                if (event.key === "ArrowLeft" || event.key === "ArrowRight" || event.key === "Home" || event.key === "End") {
+                    this.handleArrowNav(event, bins);
+                }
+                if (event.key === "Escape") {
+                    this.selectionManager.clear();
                     event.preventDefault();
                 }
             })
@@ -409,16 +442,37 @@ export class Visual implements IVisual {
                 this.selectionManager.showContextMenu(selectionId, { x: event.clientX, y: event.clientY });
                 event.preventDefault();
                 event.stopPropagation();
+            })
+            .on("mouseenter", (_event: MouseEvent, d: Bin) => {
+                this.drawCrosshair(g, d, xScale, yScale, innerW, innerH, isHC ? colors.foreground : "#999999");
+            })
+            .on("mouseleave", () => {
+                g.selectAll(".crosshair").remove();
+            })
+            .on("focus", (_event: FocusEvent, d: Bin) => {
+                this.drawCrosshair(g, d, xScale, yScale, innerW, innerH, isHC ? colors.foreground : "#999999");
+            })
+            .on("blur", () => {
+                g.selectAll(".crosshair").remove();
             });
+
+        if (animate) {
+            barSelection
+                .transition()
+                .duration(300)
+                .ease(d3.easeCubicOut)
+                .attr("y", d => yScale(d.count))
+                .attr("height", d => innerH - yScale(d.count));
+        }
 
         this.tooltipServiceWrapper.addTooltip<Bin>(
             barSelection,
             (bin: Bin) => [
-                { displayName: "Range", value: `[${this.formatNumber(bin.x0, xAxisCard.numberFormat.value)}, ${this.formatNumber(bin.x1, xAxisCard.numberFormat.value)})` },
-                { displayName: "Count", value: this.formatNumber(bin.count, yAxisCard.numberFormat.value) },
-                ...(bin.underflowCount > 0 ? [{ displayName: "Below range", value: this.formatNumber(bin.underflowCount, yAxisCard.numberFormat.value) }] : []),
-                ...(bin.overflowCount > 0 ? [{ displayName: "Above range", value: this.formatNumber(bin.overflowCount, yAxisCard.numberFormat.value) }] : []),
-                ...(hasHighlights ? [{ displayName: "Highlighted", value: this.formatNumber(bin.highlightCount, yAxisCard.numberFormat.value) }] : []),
+                { displayName: this.t("Tooltip_Range"), value: `[${this.formatNumber(bin.x0, xAxisCard.numberFormat.value)}, ${this.formatNumber(bin.x1, xAxisCard.numberFormat.value)})` },
+                { displayName: this.t("Tooltip_Count"), value: this.formatNumber(bin.count, yAxisCard.numberFormat.value) },
+                ...(bin.underflowCount > 0 ? [{ displayName: this.t("Tooltip_Underflow"), value: this.formatNumber(bin.underflowCount, yAxisCard.numberFormat.value) }] : []),
+                ...(bin.overflowCount > 0 ? [{ displayName: this.t("Tooltip_Overflow"), value: this.formatNumber(bin.overflowCount, yAxisCard.numberFormat.value) }] : []),
+                ...(hasHighlights ? [{ displayName: this.t("Tooltip_Highlighted"), value: this.formatNumber(bin.highlightCount, yAxisCard.numberFormat.value) }] : []),
             ]
         );
 
@@ -448,9 +502,22 @@ export class Visual implements IVisual {
                 .attr("transform", `translate(0,${innerH})`)
                 .call(xAxis);
             const xColor = isHC ? colors.foreground : xAxisCard.labelColor.value.value;
-            xAxisG.selectAll("text")
+            const tickTexts = xAxisG.selectAll<SVGTextElement, unknown>("text")
                 .attr("fill", xColor)
                 .attr("font-size", `${xAxisCard.fontSize.value}px`);
+            // Adaptive label rotation: when labels would overlap, rotate 45°.
+            const tickNodes = tickTexts.nodes();
+            if (tickNodes.length >= 2) {
+                const maxLabelWidth = Math.max(...tickNodes.map(node => node.getComputedTextLength?.() ?? 0));
+                const slotWidth = innerW / tickNodes.length;
+                if (maxLabelWidth + 6 > slotWidth) {
+                    tickTexts
+                        .attr("text-anchor", "end")
+                        .attr("transform", "rotate(-45)")
+                        .attr("dx", "-0.4em")
+                        .attr("dy", "0.4em");
+                }
+            }
             xAxisG.selectAll("path, line").attr("stroke", xColor);
             if (xTitle) {
                 g.append("text")
@@ -489,6 +556,11 @@ export class Visual implements IVisual {
             }
         }
 
+        // Help icon top-right (only when there's room and the host allows it).
+        if (innerW > 120) {
+            this.drawHelpIcon(g, innerW, isHC ? colors.foreground : "#5b5fc7");
+        }
+
         // Normal curve overlay
         if (showCurve) {
             this.drawNormalCurve(g, stats, data.total, bins, xScale, yScale, innerH, isHC, colors.foreground);
@@ -518,7 +590,7 @@ export class Visual implements IVisual {
                 .attr("y", -2)
                 .attr("fill", isHC ? colors.foreground : "#999999")
                 .attr("font-size", "10px")
-                .text("Tip: repeated values? Add the column to Frequency → Count");
+                .text(this.t("Visual_Hint_Frequency"));
         }
     }
 
@@ -640,16 +712,16 @@ export class Visual implements IVisual {
         };
 
         if (card.showMean.value) {
-            drawLine(stats.mean, "Mean", "3,2");
+            drawLine(stats.mean, this.t("Reference_Mean"), "3,2");
         }
         if (card.showMedian.value) {
-            drawLine(stats.median, "Median", "1,2");
+            drawLine(stats.median, this.t("Reference_Median"), "1,2");
         }
         if (card.showSd.value && stats.sd > 0) {
             const sdCount = Math.max(1, Math.min(3, Math.round(card.sdCount.value)));
             for (let i = 1; i <= sdCount; i++) {
-                drawLine(stats.mean - stats.sd * i, `-${i} SD`);
-                drawLine(stats.mean + stats.sd * i, `+${i} SD`);
+                drawLine(stats.mean - stats.sd * i, this.t("Reference_SdMinus", i));
+                drawLine(stats.mean + stats.sd * i, this.t("Reference_SdPlus", i));
             }
         }
     }
@@ -691,16 +763,16 @@ export class Visual implements IVisual {
         };
 
         if (hasLsl) {
-            drawLine(card.lsl.value, "LSL");
+            drawLine(card.lsl.value, this.t("Spec_LSL"));
         }
         if (hasUsl) {
-            drawLine(card.usl.value, "USL");
+            drawLine(card.usl.value, this.t("Spec_USL"));
         }
         if (card.showTarget.value && hasTarget) {
-            drawLine(card.target.value, "Target", "2,2");
+            drawLine(card.target.value, this.t("Spec_Target"), "2,2");
         }
 
-        // Cp / Cpk readout
+        // Cp / Cpk readout + optional sigma level/DPMO + Anderson-Darling p-value
         if (card.showCpk.value && hasLsl && hasUsl && card.lsl.value < card.usl.value && stats.sd > 0) {
             const lsl = card.lsl.value;
             const usl = card.usl.value;
@@ -709,16 +781,99 @@ export class Visual implements IVisual {
             const cpl = (stats.mean - lsl) / (3 * stats.sd);
             const cpk = Math.min(cpu, cpl);
 
-            g.append("text")
-                .classed("capability-label", true)
-                .attr("x", innerW - 4)
-                .attr("y", innerH - 6)
-                .attr("text-anchor", "end")
-                .attr("fill", color)
-                .attr("font-size", "12px")
-                .attr("font-weight", "bold")
-                .text(`Cp ${cp.toFixed(decimals)}  Cpk ${cpk.toFixed(decimals)}`);
+            const lines: string[] = [
+                this.t("Capability_Label", cp.toFixed(decimals), cpk.toFixed(decimals))
+            ];
+            if (card.showSigma.value) {
+                const sigmaLevel = 3 * cpk;
+                const dpmo = this.cpkToDPMO(cpk);
+                lines.push(this.t("Capability_SigmaLevel", sigmaLevel.toFixed(2)) +
+                    "  " + this.t("Capability_DPMO", this.formatDPMO(dpmo)));
+            }
+            if (card.showAD.value) {
+                const p = this.andersonDarlingP(this.formattingSettings, stats, dataView);
+                if (Number.isFinite(p)) {
+                    lines.push(this.t("Capability_AndersonDarling", p.toFixed(3)));
+                }
+            }
+
+            const labelGroup = g.append("g").classed("capability-label-group", true);
+            lines.forEach((text, i) => {
+                labelGroup.append("text")
+                    .classed(i === 0 ? "capability-label" : "capability-extra", true)
+                    .attr("x", innerW - 4)
+                    .attr("y", innerH - 6 - (lines.length - 1 - i) * 14)
+                    .attr("text-anchor", "end")
+                    .attr("fill", color)
+                    .attr("font-size", i === 0 ? "12px" : "11px")
+                    .attr("font-weight", i === 0 ? "bold" : "normal")
+                    .text(text);
+            });
         }
+    }
+
+    private cpkToDPMO(cpk: number): number {
+        // P(defect) = 1 - P(LSL ≤ X ≤ USL). With one-sided Cpk and assuming normal:
+        // defect probability ≈ 2 * (1 - Φ(3·Cpk)). Multiply by 1e6 to get DPMO.
+        if (!Number.isFinite(cpk) || cpk <= 0) return 1_000_000;
+        const z = 3 * cpk;
+        const p = 1 - this.normalCdf(z);
+        return Math.min(1_000_000, Math.max(0, 2 * p * 1_000_000));
+    }
+
+    private formatDPMO(dpmo: number): string {
+        if (dpmo >= 1000) return this.formatNumber(Math.round(dpmo), ",d");
+        return dpmo.toFixed(1);
+    }
+
+    private normalCdf(z: number): number {
+        // Abramowitz & Stegun 26.2.17 approximation, |error| < 7.5e-8
+        const sign = z < 0 ? -1 : 1;
+        const x = Math.abs(z) / Math.SQRT2;
+        const a1 =  0.254829592, a2 = -0.284496736, a3 =  1.421413741;
+        const a4 = -1.453152027, a5 =  1.061405429, p  =  0.3275911;
+        const t = 1.0 / (1.0 + p * x);
+        const y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+        return 0.5 * (1.0 + sign * y);
+    }
+
+    private andersonDarlingP(
+        _settings: VisualFormattingSettingsModel,
+        stats: HistogramStats,
+        _dataView: DataView | undefined
+    ): number {
+        // Anderson-Darling test on the expanded sample: weights are integer counts.
+        const data = this.lastData;
+        if (!data || data.total < 8 || stats.sd <= 0) return NaN;
+        const sample: number[] = [];
+        for (let i = 0; i < data.values.length; i++) {
+            const w = Math.round(data.weights[i]);
+            for (let k = 0; k < w; k++) sample.push(data.values[i]);
+        }
+        if (sample.length < 8) return NaN;
+        sample.sort((a, b) => a - b);
+        const n = sample.length;
+        let sum = 0;
+        for (let i = 0; i < n; i++) {
+            const z = (sample[i] - stats.mean) / stats.sd;
+            const Fi = this.normalCdf(z);
+            const zR = (sample[n - 1 - i] - stats.mean) / stats.sd;
+            const Frev = this.normalCdf(zR);
+            const a = Math.max(1e-12, Fi);
+            const b = Math.max(1e-12, 1 - Frev);
+            sum += (2 * i + 1) * (Math.log(a) + Math.log(b));
+        }
+        const A2 = -n - sum / n;
+        // adjust for sample mean+sd being estimated (D'Agostino 1986)
+        const A2star = A2 * (1 + 0.75 / n + 2.25 / (n * n));
+        // p-value approximation per Stephens (1986)
+        let p: number;
+        if (A2star < 0.2) p = 1 - Math.exp(-13.436 + 101.14 * A2star - 223.73 * A2star * A2star);
+        else if (A2star < 0.34) p = 1 - Math.exp(-8.318 + 42.796 * A2star - 59.938 * A2star * A2star);
+        else if (A2star < 0.6) p = Math.exp(0.9177 - 4.279 * A2star - 1.38 * A2star * A2star);
+        else if (A2star < 13) p = Math.exp(1.2937 - 5.709 * A2star + 0.0186 * A2star * A2star);
+        else p = 0;
+        return Math.max(0, Math.min(1, p));
     }
 
     private drawLineLabels(
@@ -806,7 +961,7 @@ export class Visual implements IVisual {
 
         const g = this.svg.append("g")
             .classed("landing-page", true)
-            .attr("aria-label", "Histogram+ setup instructions");
+            .attr("aria-label", this.t("Visual_Landing_Aria"));
 
         if (width <= 430 || height <= 260) {
             const panelX = 10;
@@ -869,7 +1024,7 @@ export class Visual implements IVisual {
                 .attr("fill", fg)
                 .attr("font-size", "17px")
                 .attr("font-weight", "700")
-                .text("Histogram+");
+                .text(this.t("Landing_Title"));
 
             g.append("text")
                 .classed("landing-subtitle", true)
@@ -877,11 +1032,11 @@ export class Visual implements IVisual {
                 .attr("y", titleY + 18)
                 .attr("fill", muted)
                 .attr("font-size", "9px")
-                .text("Quality distributions");
+                .text(this.t("Landing_Subtitle_Compact"));
 
             const compactSteps = [
-                { badge: "1", text: "Values: numeric column" },
-                { badge: "2", text: "Frequency: Count for repeats" }
+                { badge: "1", text: this.t("Landing_Step1_Compact") },
+                { badge: "2", text: this.t("Landing_Step2_Compact") }
             ];
 
             compactSteps.forEach((step, i) => {
@@ -916,7 +1071,7 @@ export class Visual implements IVisual {
                     .attr("y", panelY + panelH - 18)
                     .attr("fill", muted)
                     .attr("font-size", "9px")
-                    .text("Tune bins and limits in Format.");
+                    .text(this.t("Landing_Note_Compact"));
             }
             return;
         }
@@ -990,7 +1145,7 @@ export class Visual implements IVisual {
             .attr("fill", fg)
             .attr("font-size", "22px")
             .attr("font-weight", "700")
-            .text("Histogram+");
+            .text(this.t("Landing_Title"));
 
         content.append("text")
             .classed("landing-subtitle", true)
@@ -998,11 +1153,11 @@ export class Visual implements IVisual {
             .attr("y", titleY + 24)
             .attr("fill", muted)
             .attr("font-size", "12px")
-            .text("Clean distributions for quality data");
+            .text(this.t("Landing_Subtitle_Full"));
 
         const steps = [
-            { badge: "1", text: "Drop a numeric column into Values." },
-            { badge: "2", text: "Repeated values? Add Count to Frequency." }
+            { badge: "1", text: this.t("Landing_Step1_Full") },
+            { badge: "2", text: this.t("Landing_Step2_Full") }
         ];
 
         steps.forEach((step, i) => {
@@ -1036,7 +1191,7 @@ export class Visual implements IVisual {
             .attr("y", panelY + panelH - 28)
             .attr("fill", muted)
             .attr("font-size", "11px")
-            .text("Then tune bins, limits, and reference lines in Format.");
+            .text(this.t("Landing_Note_Full"));
     }
 
     private drawMessage(
@@ -1061,15 +1216,40 @@ export class Visual implements IVisual {
         return !!object && Object.prototype.hasOwnProperty.call(object, propertyName);
     }
 
+    // d3 format spec ends in a single type letter preceded by precision/comma/dot;
+    // PBI .NET-style specs use `#` or `0` placeholders. We route to d3 when the
+    // string looks like a d3 format, otherwise to the locale-aware valueFormatter.
+    private static D3_FORMAT_PATTERN = /^[+\-,$#~]*[0-9]*(\.[0-9]+)?[bcdefgnoprsxX%]?$/;
+    private static D3_FORMAT_HAS_TYPE = /[bcdefgnoprsxX%]$/;
+
+    private looksLikeD3Format(spec: string): boolean {
+        return Visual.D3_FORMAT_PATTERN.test(spec) && Visual.D3_FORMAT_HAS_TYPE.test(spec);
+    }
+
     private createFormatter(formatString: string): ((value: number) => string) | undefined {
         const trimmed = formatString.trim();
         if (!trimmed) {
             return undefined;
         }
+        if (this.looksLikeD3Format(trimmed)) {
+            try {
+                return d3.format(trimmed);
+            } catch {
+                // fall through to valueFormatter
+            }
+        }
         try {
-            return d3.format(trimmed);
+            const formatter = valueFormatter.create({
+                format: trimmed,
+                cultureSelector: this.locale
+            });
+            return (value: number) => formatter.format(value);
         } catch {
-            return undefined;
+            try {
+                return d3.format(trimmed);
+            } catch {
+                return undefined;
+            }
         }
     }
 
@@ -1078,11 +1258,119 @@ export class Visual implements IVisual {
         if (activeFormatter) {
             return activeFormatter(value);
         }
-        return d3.format(Number.isInteger(value) ? ",d" : ",.2~f")(value);
+        try {
+            const fallback = valueFormatter.create({
+                format: Number.isInteger(value) ? "#,0" : "#,0.##",
+                cultureSelector: this.locale
+            });
+            return fallback.format(value);
+        } catch {
+            return d3.format(Number.isInteger(value) ? ",d" : ",.2~f")(value);
+        }
     }
 
     public getFormattingModel(): powerbi.visuals.FormattingModel {
         return this.formattingSettingsService.buildFormattingModel(this.formattingSettings);
+    }
+
+    private drawHelpIcon(
+        g: d3.Selection<SVGGElement, unknown, null, undefined>,
+        innerW: number,
+        color: string
+    ): void {
+        const icon = g.append("g")
+            .classed("help-icon", true)
+            .attr("transform", `translate(${innerW - 14},2)`)
+            .attr("cursor", "pointer")
+            .attr("tabindex", "0")
+            .attr("role", "button")
+            .attr("aria-label", "Help");
+        icon.append("circle")
+            .attr("r", 8)
+            .attr("fill", "transparent")
+            .attr("stroke", color)
+            .attr("stroke-width", 1.2)
+            .attr("opacity", 0.6);
+        icon.append("text")
+            .attr("text-anchor", "middle")
+            .attr("dominant-baseline", "central")
+            .attr("font-size", "10px")
+            .attr("font-weight", "700")
+            .attr("fill", color)
+            .text("?");
+        const open = () => {
+            try {
+                this.host.launchUrl("https://github.com/mkocontracting/histogram-plus#readme");
+            } catch { /* host may disallow launchUrl in some embed contexts */ }
+        };
+        icon.on("click", open);
+        icon.on("keydown", (event: KeyboardEvent) => {
+            if (event.key === "Enter" || event.key === " ") {
+                open();
+                event.preventDefault();
+            }
+        });
+    }
+
+    private drawCrosshair(
+        g: d3.Selection<SVGGElement, unknown, null, undefined>,
+        bin: Bin,
+        xScale: d3.ScaleLinear<number, number>,
+        yScale: d3.ScaleLinear<number, number>,
+        innerW: number,
+        innerH: number,
+        color: string
+    ): void {
+        g.selectAll(".crosshair").remove();
+        const xMid = (xScale(bin.x0) + xScale(bin.x1)) / 2;
+        const yTop = yScale(bin.count);
+        const ch = g.append("g").classed("crosshair", true)
+            .attr("pointer-events", "none");
+        ch.append("line")
+            .attr("x1", xMid).attr("x2", xMid)
+            .attr("y1", yTop).attr("y2", innerH)
+            .attr("stroke", color)
+            .attr("stroke-width", 1)
+            .attr("stroke-dasharray", "2,3")
+            .attr("opacity", 0.7);
+        ch.append("line")
+            .attr("x1", 0).attr("x2", innerW)
+            .attr("y1", yTop).attr("y2", yTop)
+            .attr("stroke", color)
+            .attr("stroke-width", 1)
+            .attr("stroke-dasharray", "2,3")
+            .attr("opacity", 0.7);
+    }
+
+    private animationsEnabled(): boolean {
+        try {
+            if (typeof window !== "undefined") {
+                if ((window as unknown as { __skipAnimations?: boolean }).__skipAnimations) return false;
+                if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+                    return false;
+                }
+            }
+        } catch { /* ignore matchMedia errors in sandboxed hosts */ }
+        return !this.host.colorPalette.isHighContrast;
+    }
+
+    private handleArrowNav(event: KeyboardEvent, bins: Bin[]): void {
+        const bars = this.svg.selectAll<SVGRectElement, Bin>("rect.bar").nodes();
+        if (bars.length === 0) return;
+        const current = bars.indexOf(document.activeElement as SVGRectElement);
+        let next = current;
+        switch (event.key) {
+            case "ArrowLeft": next = Math.max(0, current - 1); break;
+            case "ArrowRight": next = Math.min(bars.length - 1, current + 1); break;
+            case "Home": next = 0; break;
+            case "End": next = bars.length - 1; break;
+        }
+        if (next !== current && next >= 0) {
+            bars.forEach((b, i) => b.setAttribute("tabindex", i === next ? "0" : "-1"));
+            bars[next].focus();
+            event.preventDefault();
+            void bins;
+        }
     }
 
     protected getHighContrastColors(): { foreground: string; background: string; selected: string } {

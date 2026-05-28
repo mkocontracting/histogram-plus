@@ -56,6 +56,8 @@
                 "showTarget": { "type": { "bool": true } },
                 "target":  { "type": { "numeric": true } },
                 "showCpk": { "type": { "bool": true } },
+                "showSigma": { "type": { "bool": true } },
+                "showAD": { "type": { "bool": true } },
                 "decimals": { "type": { "numeric": true } }
             }
         },
