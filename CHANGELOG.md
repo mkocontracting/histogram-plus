@@ -4,6 +4,21 @@ All notable changes to Histogram+ are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.0.24] — 2026-05-28
+
+### Added — Compare-by series (multi-group histograms)
+- New **"Compare by"** Grouping data role. Drag any categorical column (gender, region, treatment) and the histogram splits into one series per category.
+- New **Comparison** settings card with four layout modes:
+  - **Side by side** — two bars per bin, adjacent.
+  - **Stacked** — series stack vertically within each bin.
+  - **Mirrored (back-to-back)** — first series up, second down from the zero line (population-pyramid style).
+  - **Overlay** — translucent bars drawn over each other.
+- Second-series color picker and a toggleable in-canvas legend.
+- Tooltip auto-extends with one extra line per series showing the group name and count.
+- Localized strings for the Comparison card and Compare-by role across all 6 supported languages.
+- Harness scenarios for all four comparison modes (`comparisonSideBySide`, `comparisonStacked`, `comparisonMirrored`, `comparisonOverlay`).
+- New AppSource screenshot `09-comparison.png` showing a mirrored Male/Female age pyramid.
+
 ## [1.0.0.23] — 2026-05-28
 
 ### Added — more locales + advanced statistics + mobile + tour

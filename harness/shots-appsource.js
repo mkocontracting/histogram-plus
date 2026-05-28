@@ -35,7 +35,8 @@ const scenarios = [
   { name: 'appsourceLargeDataset',   out: '05-large-dataset.png',  caption: '2,000 samples, 40 bins' },
   { name: 'appsourceCapability',     out: '06-capability.png',     caption: 'Sigma level, DPMO, Anderson-Darling p-value' },
   { name: 'appsourceQQ',             out: '07-qqplot.png',         caption: 'Q-Q plot overlay for normality assessment' },
-  { name: 'appsourceBoxPlot',        out: '08-boxplot.png',        caption: 'Box plot strip with histogram' }
+  { name: 'appsourceBoxPlot',        out: '08-boxplot.png',        caption: 'Box plot strip with histogram' },
+  { name: 'appsourceComparison',     out: '09-comparison.png',     caption: 'Compare-by groups (Male/Female mirrored)' }
 ];
 
 (async () => {

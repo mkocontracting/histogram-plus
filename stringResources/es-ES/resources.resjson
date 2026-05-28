@@ -3,20 +3,17 @@
     "Role_Values_Description": "Arrastra una columna numérica aquí. Para valores repetidos, añade la misma columna también a Frecuencia como Recuento.",
     "Role_Frequency_DisplayName": "Frecuencia (Recuento)",
     "Role_Frequency_Description": "Opcional. Usa Recuento de la columna Valores cuando los valores repetidos deban contarse. Deja vacío para datos continuos.",
-
     "Visual_Aria": "Visualización personalizada Histogram+",
     "Visual_Landing_Aria": "Instrucciones de configuración de Histogram+",
     "Visual_Empty_NoNumeric": "No hay valores numéricos para mostrar",
     "Visual_Empty_NoValuesInRange": "Ningún valor en el rango seleccionado del eje X",
     "Visual_Hint_Frequency": "Consejo: ¿valores repetidos? Añade la columna a Frecuencia → Recuento",
     "Visual_Bar_AriaLabel": "Bin de histograma de {0} a {1}, recuento {2}",
-
     "Tooltip_Range": "Rango",
     "Tooltip_Count": "Recuento",
     "Tooltip_Underflow": "Bajo rango",
     "Tooltip_Overflow": "Sobre rango",
     "Tooltip_Highlighted": "Resaltado",
-
     "Reference_Mean": "Media",
     "Reference_Median": "Mediana",
     "Reference_SdMinus": "-{0} DE",
@@ -24,12 +21,10 @@
     "Spec_LSL": "LEI",
     "Spec_USL": "LES",
     "Spec_Target": "Objetivo",
-
     "Capability_Label": "Cp {0}  Cpk {1}",
     "Capability_SigmaLevel": "{0}σ",
     "Capability_DPMO": "DPMO {0}",
     "Capability_AndersonDarling": "AD p {0}",
-
     "Landing_Title": "Histogram+",
     "Landing_Subtitle_Full": "Distribuciones claras para datos de calidad",
     "Landing_Subtitle_Compact": "Distribuciones de calidad",
@@ -39,7 +34,6 @@
     "Landing_Step2_Compact": "Frecuencia: Recuento para repeticiones",
     "Landing_Note_Full": "Después ajusta bins, límites y líneas de referencia en Formato.",
     "Landing_Note_Compact": "Ajusta bins y límites en Formato.",
-
     "Bins_DisplayName": "Bins",
     "Bins_Description": "Agrupación de datos en barras. Auto elige según tamaño de muestra (Sturges).",
     "Bins_Mode_DisplayName": "Modo de bin",
@@ -51,7 +45,6 @@
     "Bins_Count_Description": "Usado cuando Modo de bin es Número de bins.",
     "Bins_Width_DisplayName": "Ancho de bin",
     "Bins_Width_Description": "Usado cuando Modo de bin es Ancho de bin.",
-
     "Bars_DisplayName": "Barras",
     "Bars_Description": "Color, opacidad, borde y espacio entre barras.",
     "Bars_Fill_DisplayName": "Color de barra",
@@ -62,14 +55,12 @@
     "Bars_Stroke_Description": "Color de la línea fina entre barras.",
     "Bars_Gap_DisplayName": "Separación (%)",
     "Bars_Gap_Description": "Separación entre barras como % del ancho de bin.",
-
     "NormalCurve_DisplayName": "Curva normal",
     "NormalCurve_Description": "Overlay opcional con la curva normal ajustada.",
     "NormalCurve_Color_DisplayName": "Color de curva",
     "NormalCurve_Color_Description": "Color de la curva normal.",
     "NormalCurve_StrokeWidth_DisplayName": "Grosor de línea",
     "NormalCurve_StrokeWidth_Description": "Grosor de la curva normal.",
-
     "SpecLimits_DisplayName": "Límites de especificación",
     "SpecLimits_Description": "LEI/LES, objetivo y capacidad Cp/Cpk.",
     "SpecLimits_LSL_DisplayName": "LEI (límite inferior)",
@@ -92,7 +83,6 @@
     "SpecLimits_ShowAD_Description": "Ejecutar test de normalidad Anderson-Darling.",
     "SpecLimits_Decimals_DisplayName": "Decimales",
     "SpecLimits_Decimals_Description": "Número de decimales para Cp/Cpk.",
-
     "ReferenceLines_DisplayName": "Líneas de referencia",
     "ReferenceLines_Description": "Líneas estadísticas para media, mediana y bandas DE.",
     "ReferenceLines_ShowMean_DisplayName": "Media",
@@ -107,7 +97,6 @@
     "ReferenceLines_Color_Description": "Color de las líneas de referencia.",
     "ReferenceLines_StrokeWidth_DisplayName": "Grosor de línea",
     "ReferenceLines_StrokeWidth_Description": "Grosor de las líneas de referencia.",
-
     "XAxis_DisplayName": "Eje X",
     "XAxis_Description": "Configuración del eje horizontal.",
     "XAxis_Show_DisplayName": "Mostrar",
@@ -126,7 +115,6 @@
     "XAxis_LabelColor_Description": "Color de las etiquetas.",
     "XAxis_FontSize_DisplayName": "Tamaño de fuente",
     "XAxis_FontSize_Description": "Tamaño en píxeles.",
-
     "YAxis_DisplayName": "Eje Y",
     "YAxis_Description": "Configuración del eje vertical.",
     "YAxis_Show_DisplayName": "Mostrar",
@@ -139,25 +127,31 @@
     "YAxis_LabelColor_Description": "Color de las etiquetas.",
     "YAxis_FontSize_DisplayName": "Tamaño de fuente",
     "YAxis_FontSize_Description": "Tamaño en píxeles.",
-
     "Help_AriaLabel": "Ayuda",
     "Tour_Dismiss": "Ocultar guía",
     "Tour_Step1": "Ajusta bins y rango del eje en Formato.",
     "Tour_Step2": "Activa límites de spec y Cp/Cpk para análisis de proceso.",
     "Tour_Step3": "Las flechas mueven el foco entre barras; Enter selecciona.",
-
     "QQPlot_DisplayName": "Gráfico Q-Q",
     "QQPlot_Description": "Overlay cuantil-cuantil para probar normalidad.",
     "QQPlot_Show_DisplayName": "Mostrar",
     "QQPlot_Color_DisplayName": "Color de puntos",
     "QQPlot_Color_Description": "Color de los puntos Q-Q.",
-
     "BoxPlot_DisplayName": "Diagrama de caja",
     "BoxPlot_Description": "Tira boxplot debajo del histograma.",
     "BoxPlot_Show_DisplayName": "Mostrar",
     "BoxPlot_Color_DisplayName": "Color de caja",
     "BoxPlot_Color_Description": "Color de relleno de la caja.",
-
     "Tooltip_MiniChart_DisplayName": "Mini-gráfico en info",
-    "Tooltip_MiniChart_Description": "Mostrar un pequeño boceto del histograma en info-burbujas de página."
+    "Tooltip_MiniChart_Description": "Mostrar un pequeño boceto del histograma en info-burbujas de página.",
+    "Role_Series_DisplayName": "Comparar por (opcional)",
+    "Role_Series_Description": "Columna de agrupación opcional (p. ej. género, región). Divide el histograma en varias series mostradas en paralelo, en espejo, apiladas o superpuestas.",
+    "Comparison_DisplayName": "Comparación",
+    "Comparison_Description": "Ajustes para la serie de comparación opcional.",
+    "Comparison_Mode_DisplayName": "Disposición",
+    "Comparison_Mode_Description": "Disposición de las varias series por bin.",
+    "Comparison_Color2_DisplayName": "Color de la 2ª serie",
+    "Comparison_Color2_Description": "Color de relleno de la 2ª serie.",
+    "Comparison_ShowLegend_DisplayName": "Mostrar leyenda",
+    "Comparison_ShowLegend_Description": "Muestra una pequeña leyenda con los nombres de las series."
 }

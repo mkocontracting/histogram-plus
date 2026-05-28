@@ -239,6 +239,38 @@ const scenarios = {
     values: rawValues,
     objects: { tour:{ dismissed:false } }
   },
+  comparisonSideBySide: {
+    values: [20,30,40,50,60,70],
+    series: [
+      { name: 'Male',   weights: [40,80,120,90,30,5] },
+      { name: 'Female', weights: [38,75,110,100,55,15] }
+    ],
+    objects: { comparison:{ mode:'sideBySide' }, bins:{ mode:'count', count:6 }, tour:{ dismissed:true } }
+  },
+  comparisonStacked: {
+    values: [20,30,40,50,60,70],
+    series: [
+      { name: 'Male',   weights: [40,80,120,90,30,5] },
+      { name: 'Female', weights: [38,75,110,100,55,15] }
+    ],
+    objects: { comparison:{ mode:'stacked' }, bins:{ mode:'count', count:6 }, tour:{ dismissed:true } }
+  },
+  comparisonMirrored: {
+    values: [20,30,40,50,60,70],
+    series: [
+      { name: 'Male',   weights: [40,80,120,90,30,5] },
+      { name: 'Female', weights: [38,75,110,100,55,15] }
+    ],
+    objects: { comparison:{ mode:'mirrored' }, bins:{ mode:'count', count:6 }, tour:{ dismissed:true } }
+  },
+  comparisonOverlay: {
+    values: [20,30,40,50,60,70],
+    series: [
+      { name: 'Male',   weights: [40,80,120,90,30,5] },
+      { name: 'Female', weights: [38,75,110,100,55,15] }
+    ],
+    objects: { comparison:{ mode:'overlay' }, bins:{ mode:'count', count:6 }, tour:{ dismissed:true } }
+  },
   appsourceDefault: {
     values: rawValues,
     objects: {
@@ -311,6 +343,21 @@ const scenarios = {
       bars:{ gap:14 },
       xAxis:{ title:'Diameter (mm)', numberFormat:'.1f' },
       yAxis:{ title:'Count', numberFormat:',.0f' },
+      tour:{ dismissed:true }
+    }
+  },
+  appsourceComparison: {
+    values: [20,25,30,35,40,45,50,55,60,65,70,75],
+    series: [
+      { name: 'Male',   weights: [12,42,80,115,140,135,105,80,55,28,12,3] },
+      { name: 'Female', weights: [10,38,72,110,142,150,130,100,72,42,18,5] }
+    ],
+    objects: {
+      comparison:{ mode:'mirrored' },
+      bins:{ mode:'count', count:12 },
+      bars:{ gap:14 },
+      xAxis:{ title:'Age', numberFormat:',d' },
+      yAxis:{ title:'People', numberFormat:',d' },
       tour:{ dismissed:true }
     }
   },
@@ -391,6 +438,28 @@ const freqMeta = {
 };
 
 function dataViewFor(s) {
+  if (s.series) {
+    // Multi-series (Compare-by bound). s.series = [{ name, weights:[…] }, …]
+    const seriesCols = s.series.map((g, idx) => ({
+      source: { ...freqMeta, queryName: `frequency_${idx}`, index: 1 + idx, groupName: g.name },
+      values: g.weights,
+      highlights: g.highlights
+    }));
+    const groups = s.series.map((g, idx) => ({ name: g.name, values: [seriesCols[idx]] }));
+    const valuesArr = Object.assign([...seriesCols], { grouped: () => groups });
+    return {
+      metadata: { columns: [colMeta, freqMeta], objects: s.objects || {} },
+      categorical: {
+        categories: [{
+          source: colMeta,
+          values: s.values,
+          identity: s.values.map((_, i) => selectionId(String(i))),
+          identityFields: []
+        }],
+        values: valuesArr
+      }
+    };
+  }
   return {
     metadata:{
       columns: s.freq ? [colMeta, freqMeta] : [colMeta],

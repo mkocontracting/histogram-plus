@@ -48,7 +48,11 @@ const scenarios = [
   { name: 'boxPlot', bars: true, boxPlot: true },
   { name: 'mobile', bars: true, mobile: true },
   { name: 'tooltipMini', bars: true, tooltip: true, miniChart: true },
-  { name: 'tour', bars: true, tour: true }
+  { name: 'tour', bars: true, tour: true },
+  { name: 'comparisonSideBySide', bars: true, seriesBars: 12, legend: true },
+  { name: 'comparisonStacked', bars: true, seriesBars: 12, legend: true },
+  { name: 'comparisonMirrored', bars: true, seriesBars: 12, legend: true },
+  { name: 'comparisonOverlay', bars: true, seriesBars: 12, legend: true }
 ];
 
 function assert(condition, message) {
@@ -93,6 +97,8 @@ function assert(condition, message) {
         qqPoints: document.querySelectorAll('.qq-point').length,
         boxPlots: document.querySelectorAll('.box-plot').length,
         tours: document.querySelectorAll('.tour').length,
+        seriesBars: document.querySelectorAll('rect.series-bar').length,
+        legend: document.querySelectorAll('.comparison-legend').length,
         tooltipServiceCalled: typeof window.tooltipShown === 'undefined' ? 0 : window.tooltipShown,
         capabilityExtra: document.querySelectorAll('.capability-extra').length,
         capabilityText: document.querySelector('.capability-label')?.textContent || '',
@@ -240,6 +246,8 @@ function assert(condition, message) {
         assert(titles === 0, `${scenario.name}: expected axis titles to be dropped at narrow viewport, got ${titles}`);
       }
       if (scenario.tour) assert(result.tours > 0, `${scenario.name}: expected tour overlay`);
+      if (scenario.seriesBars !== undefined) assert(result.seriesBars === scenario.seriesBars, `${scenario.name}: expected ${scenario.seriesBars} series rects, got ${result.seriesBars}`);
+      if (scenario.legend) assert(result.legend > 0, `${scenario.name}: expected comparison legend`);
       if (scenario.landing) {
         assert(result.landingNodes > 0, `${scenario.name}: custom landing page should render`);
         assert(result.landingTitle === 'Histogram+', `${scenario.name}: expected Histogram+ landing title, got "${result.landingTitle}"`);

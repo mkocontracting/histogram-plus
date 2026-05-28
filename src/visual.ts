@@ -47,7 +47,8 @@ import { VisualFormattingSettingsModel } from "./settings";
 interface Bin {
     x0: number;
     x1: number;
-    count: number;
+    count: number;            // total across all series
+    seriesCounts: number[];   // per-series count, length === HistogramData.series.length
     highlightCount: number;
     underflowCount: number;
     overflowCount: number;
@@ -69,16 +70,23 @@ interface LineLabel {
     anchor: "start" | "middle" | "end";
 }
 
+interface SeriesSlice {
+    name: string;          // category value of the Compare-by column (e.g. "Male"). Empty when no series role.
+    weights: number[];     // per-category-index weight for this series
+}
+
 interface HistogramData {
-    values: number[];      // distinct (or raw) numeric values
-    weights: number[];     // frequency per value (1 when no Frequency measure)
+    values: number[];      // distinct (or raw) numeric values (categories)
+    weights: number[];     // total weight per category (sum across series)
+    series: SeriesSlice[]; // one slice per Compare-by group; single slice when ungrouped
     highlightWeights: number[];
     selectionIds: ISelectionId[];
     total: number;         // sum of weights = total observations
     highlightTotal: number;
-    hasFrequency: boolean; // whether a Frequency measure was supplied
+    hasFrequency: boolean;
     hasHighlights: boolean;
-    hasCategory: boolean;  // whether the Values role is populated
+    hasCategory: boolean;
+    hasSeries: boolean;    // true when more than one series slice is present
 }
 
 export class Visual implements IVisual {
@@ -188,16 +196,32 @@ export class Visual implements IVisual {
     }
 
     private extractData(dataView: DataView | undefined): HistogramData {
+        const empty: HistogramData = {
+            values: [], weights: [], series: [], highlightWeights: [], selectionIds: [],
+            total: 0, highlightTotal: 0,
+            hasFrequency: false, hasHighlights: false, hasCategory: false, hasSeries: false
+        };
         const category = dataView?.categorical?.categories?.[0];
         if (!category?.values) {
-            return { values: [], weights: [], highlightWeights: [], selectionIds: [], total: 0, highlightTotal: 0, hasFrequency: false, hasHighlights: false, hasCategory: false };
+            return empty;
         }
-        // Power BI groups the category to distinct values; the optional Frequency
-        // measure carries the count per value so repeated data bins correctly.
-        const freqColumn = dataView?.categorical?.values?.[0];
-        const values: number[] = [];
-        const weights: number[] = [];
+        const valuesArr = dataView?.categorical?.values;
+        // Detect grouped (Compare-by series bound) vs ungrouped values.
+        // When series is bound, valuesArr.grouped() returns one DataViewValueColumnGroup
+        // per Compare-by category value; each group has its own frequency column.
+        let groups: powerbi.DataViewValueColumnGroup[] = [];
+        try {
+            groups = valuesArr?.grouped?.() ?? [];
+        } catch { groups = []; }
+        const hasFrequency = !!valuesArr && valuesArr.length > 0;
+        const hasSeries = groups.length > 1;
+
+        // Collect per-category index → series weights matrix.
+        const seriesNames: string[] = hasSeries ? groups.map(g => g.name == null ? "" : String(g.name)) : [""];
+        const seriesWeightsMatrix: number[][] = seriesNames.map(() => []);
+        const totalWeights: number[] = [];
         const highlightWeights: number[] = [];
+        const values: number[] = [];
         const selectionIds: ISelectionId[] = [];
         let hasHighlights = false;
         for (let i = 0; i < category.values.length; i++) {
@@ -206,29 +230,61 @@ export class Visual implements IVisual {
             if (raw === null || raw === undefined || !Number.isFinite(n)) {
                 continue;
             }
-            let w = 1;
-            if (freqColumn) {
-                const f = Number(freqColumn.values[i]);
-                w = Number.isFinite(f) && f > 0 ? f : 0;
-            }
-            if (w > 0) {
-                let hw = w;
-                if (freqColumn?.highlights) {
-                    const h = Number(freqColumn.highlights[i]);
-                    hw = Number.isFinite(h) && h > 0 ? Math.min(h, w) : 0;
-                    hasHighlights = hasHighlights || hw < w;
+            const perSeries: number[] = [];
+            let totalForRow = 0;
+            let hwForRow = 0;
+            let baseForHighlight = 0;
+            if (hasSeries) {
+                for (const group of groups) {
+                    const col = group.values?.[0];
+                    const w = col ? Number(col.values?.[i]) : NaN;
+                    const validW = Number.isFinite(w) && w > 0 ? w : 0;
+                    perSeries.push(validW);
+                    totalForRow += validW;
+                    baseForHighlight += validW;
+                    if (col?.highlights) {
+                        const h = Number(col.highlights[i]);
+                        const validH = Number.isFinite(h) && h > 0 ? Math.min(h, validW) : 0;
+                        hwForRow += validH;
+                        if (validH < validW) hasHighlights = true;
+                    }
                 }
-                values.push(n);
-                weights.push(w);
-                highlightWeights.push(hw);
-                selectionIds.push(this.host.createSelectionIdBuilder()
-                    .withCategory(category, i)
-                    .createSelectionId());
+            } else if (hasFrequency) {
+                const freqColumn = valuesArr![0];
+                const f = Number(freqColumn.values[i]);
+                const w = Number.isFinite(f) && f > 0 ? f : 0;
+                perSeries.push(w);
+                totalForRow = w;
+                baseForHighlight = w;
+                if (freqColumn.highlights) {
+                    const h = Number(freqColumn.highlights[i]);
+                    hwForRow = Number.isFinite(h) && h > 0 ? Math.min(h, w) : 0;
+                    if (hwForRow < w) hasHighlights = true;
+                }
+            } else {
+                perSeries.push(1);
+                totalForRow = 1;
+                baseForHighlight = 1;
+                hwForRow = 1;
             }
+            if (totalForRow <= 0) continue;
+            values.push(n);
+            totalWeights.push(totalForRow);
+            highlightWeights.push(hwForRow);
+            perSeries.forEach((w, s) => seriesWeightsMatrix[s].push(w));
+            selectionIds.push(this.host.createSelectionIdBuilder()
+                .withCategory(category, i)
+                .createSelectionId());
+            void baseForHighlight;
         }
-        const total = weights.reduce((a, b) => a + b, 0);
+        const total = totalWeights.reduce((a, b) => a + b, 0);
         const highlightTotal = highlightWeights.reduce((a, b) => a + b, 0);
-        return { values, weights, highlightWeights, selectionIds, total, highlightTotal, hasFrequency: !!freqColumn, hasHighlights, hasCategory: true };
+        const series: SeriesSlice[] = seriesNames.map((name, s) => ({ name, weights: seriesWeightsMatrix[s] }));
+        return {
+            values, weights: totalWeights, series, highlightWeights, selectionIds,
+            total, highlightTotal,
+            hasFrequency, hasHighlights, hasCategory: true, hasSeries
+        };
     }
 
     private computeBins(data: HistogramData): Bin[] {
@@ -237,15 +293,17 @@ export class Visual implements IVisual {
         const min = range.min;
         const max = range.max;
         const customRange = this.hasCustomXAxisRange();
+        const numSeries = data.series.length || 1;
         if (values.length === 0 || data.total <= 0) {
-            return [{ x0: min, x1: max, count: 0, highlightCount: 0, underflowCount: 0, overflowCount: 0, selectionIds: [] }];
+            return [{ x0: min, x1: max, count: 0, seriesCounts: new Array(numSeries).fill(0), highlightCount: 0, underflowCount: 0, overflowCount: 0, selectionIds: [] }];
         }
 
         // All values equal → single centered bin with a display width so it renders
         if (min === max) {
             const halfWidth = min !== 0 ? Math.abs(min) * 0.05 : 0.5;
             const highlightCount = highlightWeights.reduce((a, b) => a + b, 0);
-            return [{ x0: min - halfWidth, x1: min + halfWidth, count: data.total, highlightCount, underflowCount: 0, overflowCount: 0, selectionIds }];
+            const seriesCounts = data.series.map(s => s.weights.reduce((a, b) => a + b, 0));
+            return [{ x0: min - halfWidth, x1: min + halfWidth, count: data.total, seriesCounts, highlightCount, underflowCount: 0, overflowCount: 0, selectionIds }];
         }
 
         const binsCard = this.formattingSettings.bins;
@@ -297,6 +355,7 @@ export class Visual implements IVisual {
         const highlightCounts = new Array(edges.length - 1).fill(0);
         const underflowCounts = new Array(edges.length - 1).fill(0);
         const overflowCounts = new Array(edges.length - 1).fill(0);
+        const seriesCounts: number[][] = edges.slice(0, -1).map(() => new Array(numSeries).fill(0));
         const binSelectionIds: ISelectionId[][] = edges.slice(0, -1).map(() => []);
         for (let i = 0; i < values.length; i++) {
             const value = values[i];
@@ -313,12 +372,17 @@ export class Visual implements IVisual {
             if (idx >= counts.length) idx = counts.length - 1;
             counts[idx] += weights[i];
             highlightCounts[idx] += highlightWeights[i];
+            for (let s = 0; s < numSeries; s++) {
+                const w = data.series[s]?.weights?.[i] ?? 0;
+                seriesCounts[idx][s] += w;
+            }
             binSelectionIds[idx].push(selectionIds[i]);
         }
         return counts.map((count, i) => ({
             x0: edges[i],
             x1: edges[i + 1],
             count,
+            seriesCounts: seriesCounts[i],
             highlightCount: highlightCounts[i],
             underflowCount: underflowCounts[i],
             overflowCount: overflowCounts[i],
@@ -406,6 +470,26 @@ export class Visual implements IVisual {
         const barStrokeWidth = isHC ? 2 : 1;
         const gapRatio = Math.max(0, Math.min(80, bars.gap.value)) / 100;
         const hasHighlights = data.hasHighlights && bins.some(bin => bin.highlightCount < bin.count);
+        const comparisonCard = this.formattingSettings.comparison;
+        const comparisonMode = data.hasSeries ? (comparisonCard.mode.value.value as string) : "single";
+        const seriesColors = data.hasSeries
+            ? [barFill, isHC ? colors.foreground : comparisonCard.color2.value.value]
+            : [barFill];
+        // For multi-series side-by-side / overlay, the y-axis tracks the per-series max
+        // rather than the summed total per bin. Recompute yScale domain when the mode
+        // demands it.
+        if (data.hasSeries && (comparisonMode === "sideBySide" || comparisonMode === "overlay")) {
+            const maxPerSeries = d3.max(bins, b => d3.max(b.seriesCounts) ?? 0) ?? 0;
+            const peak = Math.max(maxPerSeries, showCurve ? curvePeak : 0);
+            yScale.domain([0, peak]).nice();
+        }
+        if (data.hasSeries && comparisonMode === "mirrored") {
+            // Symmetric scale around the inner mid-line; series 0 above, series 1 below.
+            const maxTop = d3.max(bins, b => b.seriesCounts[0] ?? 0) ?? 0;
+            const maxBot = d3.max(bins, b => b.seriesCounts[1] ?? 0) ?? 0;
+            const peak = Math.max(maxTop, maxBot);
+            yScale.domain([-peak, peak]).nice();
+        }
         const barGeometry = (d: Bin) => {
             const rawWidth = Math.max(0, xScale(d.x1) - xScale(d.x0));
             const gap = Math.min(rawWidth * gapRatio, Math.max(0, rawWidth - 1));
@@ -489,6 +573,103 @@ export class Visual implements IVisual {
                 .attr("height", d => innerH - yScale(d.count));
         }
 
+        // Multi-series overlay (Compare-by bound). The primary `bar` rect keeps
+        // interaction handlers; per-series rects are painted on top with no
+        // pointer events so clicks still route to the bin-level handler.
+        if (data.hasSeries) {
+            const numSeries = data.series.length;
+            const seriesGroup = g.append("g").classed("series-bars", true).attr("pointer-events", "none");
+            const yZero = yScale(0);
+            bins.forEach(bin => {
+                const geom = barGeometry(bin);
+                if (comparisonMode === "sideBySide") {
+                    const subWidth = geom.width / numSeries;
+                    for (let s = 0; s < numSeries; s++) {
+                        const value = bin.seriesCounts[s] ?? 0;
+                        seriesGroup.append("rect")
+                            .classed(`series-bar series-${s}`, true)
+                            .attr("x", geom.x + s * subWidth)
+                            .attr("y", yScale(value))
+                            .attr("width", Math.max(0, subWidth - 0.5))
+                            .attr("height", Math.max(0, innerH - yScale(value)))
+                            .attr("fill", seriesColors[s] ?? barFill)
+                            .attr("fill-opacity", barOpacity)
+                            .attr("stroke", barStroke)
+                            .attr("stroke-width", barStrokeWidth);
+                    }
+                } else if (comparisonMode === "stacked") {
+                    let running = 0;
+                    for (let s = 0; s < numSeries; s++) {
+                        const value = bin.seriesCounts[s] ?? 0;
+                        const yTop = yScale(running + value);
+                        const yBot = yScale(running);
+                        seriesGroup.append("rect")
+                            .classed(`series-bar series-${s}`, true)
+                            .attr("x", geom.x)
+                            .attr("y", yTop)
+                            .attr("width", geom.width)
+                            .attr("height", Math.max(0, yBot - yTop))
+                            .attr("fill", seriesColors[s] ?? barFill)
+                            .attr("fill-opacity", barOpacity)
+                            .attr("stroke", barStroke)
+                            .attr("stroke-width", barStrokeWidth);
+                        running += value;
+                    }
+                } else if (comparisonMode === "mirrored") {
+                    // Series 0 above the zero line, series 1 below it.
+                    const topVal = bin.seriesCounts[0] ?? 0;
+                    const botVal = bin.seriesCounts[1] ?? 0;
+                    if (topVal > 0) {
+                        seriesGroup.append("rect")
+                            .classed("series-bar series-0", true)
+                            .attr("x", geom.x)
+                            .attr("y", yScale(topVal))
+                            .attr("width", geom.width)
+                            .attr("height", Math.max(0, yZero - yScale(topVal)))
+                            .attr("fill", seriesColors[0] ?? barFill)
+                            .attr("fill-opacity", barOpacity)
+                            .attr("stroke", barStroke)
+                            .attr("stroke-width", barStrokeWidth);
+                    }
+                    if (botVal > 0) {
+                        seriesGroup.append("rect")
+                            .classed("series-bar series-1", true)
+                            .attr("x", geom.x)
+                            .attr("y", yZero)
+                            .attr("width", geom.width)
+                            .attr("height", Math.max(0, yScale(-botVal) - yZero))
+                            .attr("fill", seriesColors[1] ?? barFill)
+                            .attr("fill-opacity", barOpacity)
+                            .attr("stroke", barStroke)
+                            .attr("stroke-width", barStrokeWidth);
+                    }
+                } else { // overlay
+                    for (let s = 0; s < numSeries; s++) {
+                        const value = bin.seriesCounts[s] ?? 0;
+                        seriesGroup.append("rect")
+                            .classed(`series-bar series-${s}`, true)
+                            .attr("x", geom.x)
+                            .attr("y", yScale(value))
+                            .attr("width", geom.width)
+                            .attr("height", Math.max(0, innerH - yScale(value)))
+                            .attr("fill", seriesColors[s] ?? barFill)
+                            .attr("fill-opacity", Math.min(0.6, barOpacity))
+                            .attr("stroke", barStroke)
+                            .attr("stroke-width", barStrokeWidth);
+                    }
+                }
+            });
+            // Hide the primary single-bar render in multi-series modes; keep it
+            // as a zero-opacity click target so existing selection/keyboard logic
+            // still works without duplicating handlers across N×bins rects.
+            barSelection.attr("fill-opacity", 0).attr("stroke-opacity", 0);
+        }
+
+        // Legend (top-right under help icon) when in comparison mode.
+        if (data.hasSeries && comparisonCard.showLegend.value && innerW > 200) {
+            this.drawLegend(g, data.series.map(s => s.name), seriesColors, innerW - 28);
+        }
+
         const tooltipCard = this.formattingSettings.tooltip;
         const includeMiniChart = tooltipCard.miniChart.value;
         const miniChartLine = () => {
@@ -500,14 +681,23 @@ export class Visual implements IVisual {
         };
         this.tooltipServiceWrapper.addTooltip<Bin>(
             barSelection,
-            (bin: Bin) => [
-                { displayName: this.t("Tooltip_Range"), value: `[${this.formatNumber(bin.x0, xAxisCard.numberFormat.value)}, ${this.formatNumber(bin.x1, xAxisCard.numberFormat.value)})` },
-                { displayName: this.t("Tooltip_Count"), value: this.formatNumber(bin.count, yAxisCard.numberFormat.value) },
-                ...(bin.underflowCount > 0 ? [{ displayName: this.t("Tooltip_Underflow"), value: this.formatNumber(bin.underflowCount, yAxisCard.numberFormat.value) }] : []),
-                ...(bin.overflowCount > 0 ? [{ displayName: this.t("Tooltip_Overflow"), value: this.formatNumber(bin.overflowCount, yAxisCard.numberFormat.value) }] : []),
-                ...(hasHighlights ? [{ displayName: this.t("Tooltip_Highlighted"), value: this.formatNumber(bin.highlightCount, yAxisCard.numberFormat.value) }] : []),
-                ...miniChartLine(),
-            ]
+            (bin: Bin) => {
+                const seriesLines = data.hasSeries
+                    ? data.series.map((s, idx) => ({
+                        displayName: s.name || `Series ${idx + 1}`,
+                        value: this.formatNumber(bin.seriesCounts[idx] ?? 0, yAxisCard.numberFormat.value)
+                    }))
+                    : [];
+                return [
+                    { displayName: this.t("Tooltip_Range"), value: `[${this.formatNumber(bin.x0, xAxisCard.numberFormat.value)}, ${this.formatNumber(bin.x1, xAxisCard.numberFormat.value)})` },
+                    { displayName: this.t("Tooltip_Count"), value: this.formatNumber(bin.count, yAxisCard.numberFormat.value) },
+                    ...seriesLines,
+                    ...(bin.underflowCount > 0 ? [{ displayName: this.t("Tooltip_Underflow"), value: this.formatNumber(bin.underflowCount, yAxisCard.numberFormat.value) }] : []),
+                    ...(bin.overflowCount > 0 ? [{ displayName: this.t("Tooltip_Overflow"), value: this.formatNumber(bin.overflowCount, yAxisCard.numberFormat.value) }] : []),
+                    ...(hasHighlights ? [{ displayName: this.t("Tooltip_Highlighted"), value: this.formatNumber(bin.highlightCount, yAxisCard.numberFormat.value) }] : []),
+                    ...miniChartLine(),
+                ];
+            }
         );
 
         if (hasHighlights) {
@@ -1557,6 +1747,49 @@ export class Visual implements IVisual {
         q = Math.sqrt(-2 * Math.log(1 - p));
         return -(((((c[0]*q + c[1])*q + c[2])*q + c[3])*q + c[4])*q + c[5]) /
                 ((((d[0]*q + d[1])*q + d[2])*q + d[3])*q + 1);
+    }
+
+    private drawLegend(
+        g: d3.Selection<SVGGElement, unknown, null, undefined>,
+        labels: string[],
+        colors: string[],
+        rightX: number
+    ): void {
+        const padding = 6;
+        const rowH = 14;
+        const swatch = 9;
+        const charPx = 6.5;
+        const widest = Math.max(...labels.map(l => l.length)) * charPx;
+        const legendW = swatch + 4 + widest + padding * 2;
+        const legendH = labels.length * rowH + padding * 2;
+        const legend = g.append("g")
+            .classed("comparison-legend", true)
+            .attr("transform", `translate(${rightX - legendW},2)`)
+            .attr("pointer-events", "none");
+        legend.append("rect")
+            .attr("width", legendW)
+            .attr("height", legendH)
+            .attr("rx", 4)
+            .attr("fill", "#ffffff")
+            .attr("fill-opacity", 0.85)
+            .attr("stroke", "#d7dee8")
+            .attr("stroke-width", 1);
+        labels.forEach((label, i) => {
+            const y = padding + i * rowH + 4;
+            legend.append("rect")
+                .attr("x", padding)
+                .attr("y", y)
+                .attr("width", swatch)
+                .attr("height", swatch)
+                .attr("fill", colors[i] ?? "#888")
+                .attr("rx", 1);
+            legend.append("text")
+                .attr("x", padding + swatch + 4)
+                .attr("y", y + swatch - 1)
+                .attr("fill", "#1f2937")
+                .attr("font-size", "10px")
+                .text(label || `Series ${i + 1}`);
+        });
     }
 
     private drawHelpIcon(

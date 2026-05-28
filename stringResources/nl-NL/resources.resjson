@@ -3,6 +3,8 @@
     "Role_Values_Description": "Sleep een numerieke kolom hierheen. Voor herhalende waarden voeg dezelfde kolom ook toe aan Frequentie als Aantal.",
     "Role_Frequency_DisplayName": "Frequentie (Aantal)",
     "Role_Frequency_Description": "Optioneel. Gebruik Aantal van de kolom Waarden wanneer herhalende waarden moeten worden geteld. Laat leeg voor continue data.",
+    "Role_Series_DisplayName": "Vergelijken op (optioneel)",
+    "Role_Series_Description": "Optionele groeperingskolom (bv. geslacht, regio). Splitst het histogram in meerdere reeksen naast elkaar, gespiegeld, gestapeld of over elkaar.",
 
     "Visual_Aria": "Histogram+ aangepaste visual",
     "Visual_Landing_Aria": "Histogram+ instructies",
@@ -159,5 +161,18 @@
     "BoxPlot_Color_Description": "Vulkleur van de box.",
 
     "Tooltip_MiniChart_DisplayName": "Mini-grafiek in tooltip",
-    "Tooltip_MiniChart_Description": "Toon een kleine histogram-schets in rapport-tooltips."
+    "Tooltip_MiniChart_Description": "Toon een kleine histogram-schets in rapport-tooltips.",
+
+    "Comparison_DisplayName": "Vergelijking",
+    "Comparison_Description": "Instellingen voor de optionele Vergelijken-op reeks.",
+    "Comparison_Mode_DisplayName": "Layout",
+    "Comparison_Mode_Description": "Hoe de meerdere reeksen per bin worden gerangschikt.",
+    "Comparison_Mode_SideBySide": "Naast elkaar",
+    "Comparison_Mode_Stacked": "Gestapeld",
+    "Comparison_Mode_Mirrored": "Gespiegeld (back-to-back)",
+    "Comparison_Mode_Overlay": "Over elkaar",
+    "Comparison_Color2_DisplayName": "Kleur tweede reeks",
+    "Comparison_Color2_Description": "Vulkleur voor de tweede vergelijkingsreeks.",
+    "Comparison_ShowLegend_DisplayName": "Legenda tonen",
+    "Comparison_ShowLegend_Description": "Toon een kleine legenda met de reeksnamen."
 }

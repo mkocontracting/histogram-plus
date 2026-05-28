@@ -3,20 +3,17 @@
     "Role_Values_Description": "将一个数字列拖到此处。对于重复值，请将同一列同时添加到「频次」并使用「计数」。",
     "Role_Frequency_DisplayName": "频次（计数）",
     "Role_Frequency_Description": "可选。当数据中存在重复值时，使用「数值」列的「计数」聚合。连续数据请留空。",
-
     "Visual_Aria": "Histogram+ 自定义视觉对象",
     "Visual_Landing_Aria": "Histogram+ 设置说明",
     "Visual_Empty_NoNumeric": "没有可显示的数字值",
     "Visual_Empty_NoValuesInRange": "所选 X 轴范围内没有数据",
     "Visual_Hint_Frequency": "提示：值重复？请将列添加到「频次 → 计数」",
     "Visual_Bar_AriaLabel": "直方图区间从 {0} 至 {1}，计数 {2}",
-
     "Tooltip_Range": "区间",
     "Tooltip_Count": "计数",
     "Tooltip_Underflow": "低于范围",
     "Tooltip_Overflow": "高于范围",
     "Tooltip_Highlighted": "高亮",
-
     "Reference_Mean": "均值",
     "Reference_Median": "中位数",
     "Reference_SdMinus": "-{0} 标准差",
@@ -24,12 +21,10 @@
     "Spec_LSL": "下规格限",
     "Spec_USL": "上规格限",
     "Spec_Target": "目标值",
-
     "Capability_Label": "Cp {0}  Cpk {1}",
     "Capability_SigmaLevel": "{0}σ",
     "Capability_DPMO": "DPMO {0}",
     "Capability_AndersonDarling": "AD p {0}",
-
     "Landing_Title": "Histogram+",
     "Landing_Subtitle_Full": "面向质量数据的清晰分布",
     "Landing_Subtitle_Compact": "质量分布",
@@ -39,7 +34,6 @@
     "Landing_Step2_Compact": "频次：计数用于重复",
     "Landing_Note_Full": "随后在「格式」中调整区间、限值和参考线。",
     "Landing_Note_Compact": "在「格式」中调整区间和限值。",
-
     "Bins_DisplayName": "区间",
     "Bins_Description": "控制数据如何分组为条形。Auto 按样本量选择区间数（Sturges 公式）。",
     "Bins_Mode_DisplayName": "区间模式",
@@ -51,7 +45,6 @@
     "Bins_Count_Description": "当区间模式为「区间数量」时使用。",
     "Bins_Width_DisplayName": "区间宽度",
     "Bins_Width_Description": "当区间模式为「区间宽度」时使用。",
-
     "Bars_DisplayName": "条形",
     "Bars_Description": "条形颜色、不透明度、边框和间隔。",
     "Bars_Fill_DisplayName": "条形颜色",
@@ -62,14 +55,12 @@
     "Bars_Stroke_Description": "条形之间细线的颜色。",
     "Bars_Gap_DisplayName": "间隔 (%)",
     "Bars_Gap_Description": "相邻条形间隔占区间宽度的百分比。",
-
     "NormalCurve_DisplayName": "正态曲线",
     "NormalCurve_Description": "按均值和标准差拟合的正态曲线叠加层（可选）。",
     "NormalCurve_Color_DisplayName": "曲线颜色",
     "NormalCurve_Color_Description": "正态曲线颜色。",
     "NormalCurve_StrokeWidth_DisplayName": "线宽",
     "NormalCurve_StrokeWidth_Description": "正态曲线粗细。",
-
     "SpecLimits_DisplayName": "规格限",
     "SpecLimits_Description": "下/上规格限、目标值和 Cp/Cpk 过程能力。",
     "SpecLimits_LSL_DisplayName": "下规格限 LSL",
@@ -92,7 +83,6 @@
     "SpecLimits_ShowAD_Description": "运行 Anderson-Darling 正态性检验并显示 p 值。",
     "SpecLimits_Decimals_DisplayName": "小数位数",
     "SpecLimits_Decimals_Description": "Cp/Cpk 读数的小数位数。",
-
     "ReferenceLines_DisplayName": "参考线",
     "ReferenceLines_Description": "均值、中位数和标准差带的统计参考线。",
     "ReferenceLines_ShowMean_DisplayName": "均值",
@@ -107,7 +97,6 @@
     "ReferenceLines_Color_Description": "参考线颜色。",
     "ReferenceLines_StrokeWidth_DisplayName": "线宽",
     "ReferenceLines_StrokeWidth_Description": "参考线粗细。",
-
     "XAxis_DisplayName": "X 轴",
     "XAxis_Description": "水平数值轴设置。",
     "XAxis_Show_DisplayName": "显示",
@@ -126,7 +115,6 @@
     "XAxis_LabelColor_Description": "刻度标签颜色。",
     "XAxis_FontSize_DisplayName": "字号",
     "XAxis_FontSize_Description": "刻度标签字号（像素）。",
-
     "YAxis_DisplayName": "Y 轴",
     "YAxis_Description": "垂直计数轴设置。",
     "YAxis_Show_DisplayName": "显示",
@@ -139,25 +127,31 @@
     "YAxis_LabelColor_Description": "刻度标签颜色。",
     "YAxis_FontSize_DisplayName": "字号",
     "YAxis_FontSize_Description": "刻度标签字号（像素）。",
-
     "Help_AriaLabel": "帮助",
     "Tour_Dismiss": "关闭引导",
     "Tour_Step1": "在「格式」中调整区间和坐标轴范围。",
     "Tour_Step2": "启用规格限和 Cp/Cpk 进行过程分析。",
     "Tour_Step3": "方向键在条形之间移动焦点；回车选择。",
-
     "QQPlot_DisplayName": "Q-Q 图",
     "QQPlot_Description": "用于正态性检验的分位数-分位数叠加图。",
     "QQPlot_Show_DisplayName": "显示",
     "QQPlot_Color_DisplayName": "点颜色",
     "QQPlot_Color_Description": "Q-Q 点的颜色。",
-
     "BoxPlot_DisplayName": "箱线图",
     "BoxPlot_Description": "直方图下方的箱线图条带。",
     "BoxPlot_Show_DisplayName": "显示",
     "BoxPlot_Color_DisplayName": "箱体颜色",
     "BoxPlot_Color_Description": "箱体填充颜色。",
-
     "Tooltip_MiniChart_DisplayName": "工具提示中的迷你图",
-    "Tooltip_MiniChart_Description": "在报告页工具提示中显示小型直方图缩略图。"
+    "Tooltip_MiniChart_Description": "在报告页工具提示中显示小型直方图缩略图。",
+    "Role_Series_DisplayName": "比较依据（可选）",
+    "Role_Series_Description": "可选的分组列（例如性别、地区）。将直方图拆分为多个系列，按并排、镜像、堆叠或叠加方式呈现。",
+    "Comparison_DisplayName": "比较",
+    "Comparison_Description": "可选的比较系列的设置。",
+    "Comparison_Mode_DisplayName": "布局",
+    "Comparison_Mode_Description": "每个区间中多个系列的排列方式。",
+    "Comparison_Color2_DisplayName": "第二系列颜色",
+    "Comparison_Color2_Description": "第二比较系列的填充颜色。",
+    "Comparison_ShowLegend_DisplayName": "显示图例",
+    "Comparison_ShowLegend_Description": "显示带有系列名称的小型图例。"
 }

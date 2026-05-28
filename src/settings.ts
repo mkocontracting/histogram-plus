@@ -362,6 +362,43 @@ class YAxisCard extends Card {
     slices: Slice[] = [this.title, this.numberFormat, this.labelColor, this.fontSize];
 }
 
+// ── Comparison (multi-series) ─────────────────────────────────────────────────
+class ComparisonCard extends Card {
+    mode = new formattingSettings.ItemDropdown({
+        name: "mode",
+        displayName: "Layout", displayNameKey: "Comparison_Mode_DisplayName",
+        description: "How the two (or more) groups are arranged.", descriptionKey: "Comparison_Mode_Description",
+        value: { value: "sideBySide", displayName: "Side by side" },
+        items: [
+            { value: "sideBySide", displayName: "Side by side" },
+            { value: "stacked",    displayName: "Stacked" },
+            { value: "mirrored",   displayName: "Mirrored (back-to-back)" },
+            { value: "overlay",    displayName: "Overlay" }
+        ]
+    });
+
+    color2 = new formattingSettings.ColorPicker({
+        name: "color2",
+        displayName: "Second series color", displayNameKey: "Comparison_Color2_DisplayName",
+        description: "Fill color used for the second comparison series.", descriptionKey: "Comparison_Color2_Description",
+        value: { value: "#5b5fc7" }
+    });
+
+    showLegend = new formattingSettings.ToggleSwitch({
+        name: "showLegend",
+        displayName: "Show legend", displayNameKey: "Comparison_ShowLegend_DisplayName",
+        description: "Render a small legend with the series names.", descriptionKey: "Comparison_ShowLegend_Description",
+        value: true
+    });
+
+    name: string = "comparison";
+    displayName: string = "Comparison";
+    displayNameKey: string = "Comparison_DisplayName";
+    description: string = "Settings for the optional Compare by series.";
+    descriptionKey: string = "Comparison_Description";
+    slices: Slice[] = [this.mode, this.color2, this.showLegend];
+}
+
 // ── Q-Q plot ──────────────────────────────────────────────────────────────────
 class QQPlotCard extends Card {
     show = new formattingSettings.ToggleSwitch({
@@ -440,6 +477,7 @@ export class VisualFormattingSettingsModel extends Model {
     normalCurve = new NormalCurveCard();
     specLimits  = new SpecLimitsCard();
     referenceLines = new ReferenceLinesCard();
+    comparison  = new ComparisonCard();
     qqPlot      = new QQPlotCard();
     boxPlot     = new BoxPlotCard();
     tooltip     = new TooltipCard();
@@ -447,5 +485,5 @@ export class VisualFormattingSettingsModel extends Model {
     xAxis       = new XAxisCard();
     yAxis       = new YAxisCard();
 
-    cards: Card[] = [this.bins, this.bars, this.normalCurve, this.specLimits, this.referenceLines, this.qqPlot, this.boxPlot, this.tooltip, this.xAxis, this.yAxis, this.tour];
+    cards: Card[] = [this.bins, this.bars, this.normalCurve, this.specLimits, this.referenceLines, this.comparison, this.qqPlot, this.boxPlot, this.tooltip, this.xAxis, this.yAxis, this.tour];
 }

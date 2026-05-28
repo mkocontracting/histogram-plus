@@ -3,6 +3,8 @@
     "Role_Values_Description": "Drag a numeric column here. For repeated values, also add the same column to Frequency as Count.",
     "Role_Frequency_DisplayName": "Frequency (Count)",
     "Role_Frequency_Description": "Optional. Use Count of the Values column when repeated values should be counted. Leave empty for continuous data.",
+    "Role_Series_DisplayName": "Compare by (optional)",
+    "Role_Series_Description": "Optional grouping column (e.g. gender, region). Splits the histogram into multiple series rendered side-by-side, mirrored, stacked, or overlaid.",
 
     "Visual_Aria": "Histogram+ custom visual",
     "Visual_Landing_Aria": "Histogram+ setup instructions",
@@ -159,5 +161,18 @@
     "BoxPlot_Color_Description": "Fill color of the box.",
 
     "Tooltip_MiniChart_DisplayName": "Mini chart in tooltip",
-    "Tooltip_MiniChart_Description": "Show a small histogram sketch inside report-page tooltips."
+    "Tooltip_MiniChart_Description": "Show a small histogram sketch inside report-page tooltips.",
+
+    "Comparison_DisplayName": "Comparison",
+    "Comparison_Description": "Settings for the optional Compare by series (active when a Grouping column is bound to Compare by).",
+    "Comparison_Mode_DisplayName": "Layout",
+    "Comparison_Mode_Description": "How the multiple groups are arranged on each bin.",
+    "Comparison_Mode_SideBySide": "Side by side",
+    "Comparison_Mode_Stacked": "Stacked",
+    "Comparison_Mode_Mirrored": "Mirrored (back-to-back)",
+    "Comparison_Mode_Overlay": "Overlay",
+    "Comparison_Color2_DisplayName": "Second series color",
+    "Comparison_Color2_Description": "Fill color used for the second comparison series.",
+    "Comparison_ShowLegend_DisplayName": "Show legend",
+    "Comparison_ShowLegend_Description": "Render a small legend with the series names."
 }

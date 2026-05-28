@@ -17,6 +17,7 @@ A Power BI custom visual for numeric distributions, built for quality, process, 
   - **Sigma level + DPMO** (process capability translated to Six Sigma terms)
   - **Anderson-Darling p-value** (normality test)
 - **Reference lines** for mean, median, and ±1/±2/±3 SD bands.
+- **Compare by** grouping role for two-series histograms (e.g. male/female, region A/B, control/treatment) with four layouts: side by side, stacked, mirrored (back-to-back population pyramid), and overlay.
 - Power BI **highlight / cross-highlight** rendering when the report passes highlight values.
 - Adaptive x-axis label rotation, hover and focus crosshair guides, smooth enter animation, themed focus ring, full keyboard navigation (Arrow / Home / End / Enter / Esc).
 - High-contrast support and `prefers-reduced-motion` respect.
@@ -78,6 +79,17 @@ Short, copy-the-clicks guides for common setups.
 - Click a bar to select it. Other visuals on the page filter to that subset.
 - Hold **Ctrl** while clicking additional bars to multi-select.
 - Use arrow keys to move the focus ring between bars, **Enter** or **Space** to select, **Esc** to clear.
+
+### Compare two groups (population pyramid, male vs female, region A vs B)
+- Drag the comparison column (e.g. `Gender`, `Region`) to **Compare by (optional)**.
+- Histogram+ splits the data into one series per category.
+- Format pane → **Comparison** → **Layout**:
+  - **Side by side** — two bars per bin, useful for direct count comparison.
+  - **Stacked** — totals visible per bin with both groups summed.
+  - **Mirrored (back-to-back)** — population-pyramid style: first group up, second down from the zero line.
+  - **Overlay** — translucent bars overlaid for distribution-shape comparison.
+- Change **Second series color** to recolor the second group.
+- Toggle **Show legend** off if you have the legend elsewhere on the report.
 
 ### Compare distributions across slicer choices
 - Place a slicer on the report page (e.g. region, year).
