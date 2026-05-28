@@ -1,52 +1,54 @@
 # Histogram+
 
-Histogram+ is a Power BI custom visual for numeric distributions with manual bin control, standard `[x)` intervals, exact x-axis bounds, normal curve overlay, LSL/USL spec limits, target line, Cp/Cpk, and reference lines.
+A Power BI custom visual for numeric distributions, built for quality, process, and lab analysis. It gives you manual bin control, a normal curve overlay, LSL/USL spec limits with target line, Cp/Cpk plus optional sigma level + DPMO and an Anderson-Darling normality test, and a clean reference-line layer (mean, median, ±N SD).
 
-## Privacy
-
-Histogram+ stores no data, sends no telemetry, and makes no external network calls. The visual runs entirely inside the Power BI sandbox using only the data the report passes to it. `capabilities.json` declares `privileges: []`. The source is unminified and available in this repository for review.
-
-## Support
-
-Report bugs or request features at https://github.com/mkocontracting/histogram-plus/issues.
+![Histogram+ — advanced view](harness/appsource/02-advanced.png)
 
 ## Features
 
-- Histogram rendering.
-- Auto, bin-count, and bin-width modes.
-- Standard `[x)` interval binning.
-- Exact custom x-axis range.
-- Axes, labels, bar formatting, tooltips, and context menu.
-- Power BI highlight/cross-highlight rendering when highlight values are provided by the host.
-- Normal curve.
-- LSL/USL spec limits and target line.
-- Cp/Cpk readout.
-- Mean, median, and SD reference lines.
+- Three binning modes: **Auto (Sturges)**, **Number of bins**, and **Bin width**, with standard `[x)` intervals and the last bin closed on the right.
+- Optional **custom x-axis range** that excludes values outside the visible range from bar counts.
+- **Frequency (Count)** measure for correct binning of repeated or pre-grouped data.
+- **Normal curve** overlay fitted to the data's mean and standard deviation.
+- **Spec limits**: LSL, USL, Target line, and a capability readout that can show:
+  - **Cp / Cpk**
+  - **Sigma level + DPMO** (process capability translated to Six Sigma terms)
+  - **Anderson-Darling p-value** (normality test)
+- **Reference lines** for mean, median, and ±1/±2/±3 SD bands.
+- Power BI **highlight / cross-highlight** rendering when the report passes highlight values.
+- Adaptive x-axis label rotation, hover and focus crosshair guides, smooth enter animation, themed focus ring, full keyboard navigation (Arrow / Home / End / Enter / Esc).
+- High-contrast support and `prefers-reduced-motion` respect.
 
-## Data Roles
+## How to use
 
-- `Values (numeric)`: required numeric column.
-- `Frequency (Count)`: optional count/weight measure.
+1. Add Histogram+ to your report (Visualizations pane → **Import a visual → from a file**).
+2. Drag a numeric column to the **Values (numeric)** field.
+3. If your data contains **repeated or integer-grouped values** (for example, age, score, or any column where the same value appears many times), also drag the same column to **Frequency (Count)** and set its aggregation to **Count**. Power BI groups categorical values before passing them to a custom visual; the Frequency measure carries the per-value count so bars are sized correctly.
+4. Open the **Format** pane to adjust bin mode, axis range, spec limits, reference lines, and the capability readout.
 
-Power BI sends grouped category values to custom visuals. For continuous measurements with near-unique decimals, use only `Values (numeric)`. For repeated discrete or integer values, add the same field to `Frequency (Count)` and set aggregation to Count.
+### Tips
 
-## Local Checks
+- For continuous measurements with near-unique decimals, you usually only need **Values (numeric)**.
+- For pre-grouped data or integer surveys, the **Frequency = Count** pattern is required.
+- Cp / Cpk only appears when both LSL and USL are set and LSL < USL.
+- The Anderson-Darling test needs at least 8 observations and a non-zero sample standard deviation.
 
-```bash
-npm run lint
-npm run verify
-npm run build
-npm run cert
-npm audit --audit-level=moderate
-```
+## Languages
 
-`npm run verify` runs the Playwright harness against normal render, frequency weighting, highlight rendering, custom range, empty/null/single/negative data, keyboard selection, advanced feature rendering, and no-data native placeholder behavior.
+Histogram+ is available in **English** and **Dutch (nl-NL)**. Power BI Desktop uses the host language for the format pane, the on-canvas labels (Mean, Median, LSL, USL, Target), and the visual's empty-state and tooltip text.
 
-The no-data state uses a custom Histogram+ landing page with setup instructions. In Power BI Desktop this means the visual body behaves like an interactive custom-visual surface; drag from the frame when repositioning an empty visual.
+## Privacy
 
-## Certification Constraints
+Histogram+ stores no data, sends no telemetry, and makes no external network calls. The visual runs entirely inside the Power BI sandbox and only uses the data the report passes to it. `capabilities.json` declares `privileges: []`. The full source is published in this repository and is not minified.
 
-- `privileges` must remain `[]`.
-- No network calls, `innerHTML`, dynamic code execution, or minified source files.
-- Package from the Linux project directory, not the OneDrive handoff folder.
-- Replace only the rolling handoff artifact: `visuals/histogram-plus/HistogramPlus.pbiviz`.
+## Support
+
+Bugs, feature requests, and questions go to the [GitHub issue tracker](https://github.com/mkocontracting/histogram-plus/issues).
+
+## License
+
+MIT. See the `LICENSE` file (or the header in `src/visual.ts`).
+
+## Development
+
+If you want to build or modify Histogram+, see [CONTRIBUTING.md](CONTRIBUTING.md).
