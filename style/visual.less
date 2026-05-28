@@ -1,8 +1,17 @@
 svg.histogram-plus {
     display: block;
+    outline: none;
+
+    .bar {
+        cursor: pointer;
+    }
+
+    .bar:focus {
+        outline: none;
+        stroke-width: 2px;
+    }
 
     text {
         font-family: "Segoe UI", wf_segoe-ui_normal, helvetica, arial, sans-serif;
     }
 }
-

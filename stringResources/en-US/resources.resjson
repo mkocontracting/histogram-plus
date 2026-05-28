@@ -1,0 +1,6 @@
+{
+    "Role_Values_DisplayName": "Values (numeric)",
+    "Role_Values_Description": "Drag a numeric column here. For repeated values, also add the same column to Frequency as Count.",
+    "Role_Frequency_DisplayName": "Frequency (Count)",
+    "Role_Frequency_Description": "Optional. Use Count of the Values column when repeated values should be counted. Leave empty for continuous data."
+}

@@ -3,4 +3,5 @@ node_modules/
 dist/
 *.pbiviz
 harness/screenshot.png
+harness/screenshot-*.png
 webpack.statistics.*.html

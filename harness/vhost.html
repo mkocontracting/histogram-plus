@@ -14,35 +14,57 @@
 <div id="err"></div>
 <script>
 function noop(){}
+function selectionId(key){return {
+  key,
+  equals: other => other && other.key === key,
+  includes: other => other && other.key === key,
+  getKey: () => key,
+  getSelector: () => ({ data: [{ identityIndex: key }] })
+};}
 const selectionManager = {
-  select:()=>Promise.resolve([]), clear:()=>Promise.resolve(), getSelectionIds:()=>[],
+  select: ids => { window.__selected = Array.isArray(ids) ? ids.length : 1; return Promise.resolve(ids); },
+  clear:()=>Promise.resolve(), getSelectionIds:()=>[],
   registerOnSelectCallback:noop, hasSelection:()=>false, applySelectionFilter:noop,
-  showContextMenu:()=>Promise.resolve()
+  showContextMenu:(id,pos)=>{ window.__contextMenu = { id: id && id.getKey ? id.getKey() : '', pos }; return Promise.resolve(); }
 };
 const colorPalette = {
-  getColor:()=>({value:'#01B8AA'}), isHighContrast:false,
-  foreground:{value:'#000'}, background:{value:'#fff'},
-  foregroundSelected:{value:'#000'}, hyperlink:{value:'#00f'}
+  getColor:()=>({value:'#01B8AA'}),
+  get isHighContrast(){ return !!window.__scenarioConfig?.highContrast; },
+  get foreground(){ return { value: window.__scenarioConfig?.hcForeground || '#ffff00' }; },
+  get background(){ return { value: window.__scenarioConfig?.hcBackground || '#000000' }; },
+  get foregroundSelected(){ return { value: window.__scenarioConfig?.hcSelected || '#ffffff' }; },
+  hyperlink:{value:'#00f'}
 };
-const tooltipService = {enabled:()=>false,show:noop,hide:noop,move:noop,addTooltip:noop,removeTooltip:noop};
+const tooltipService = {
+  enabled:()=>!!window.__scenarioConfig?.tooltip,
+  show:(args)=>{ window.__tooltipShows = [...(window.__tooltipShows || []), args]; },
+  hide:noop,
+  move:(args)=>{ window.__tooltipMoves = [...(window.__tooltipMoves || []), args]; },
+  addTooltip:noop,
+  removeTooltip:noop
+};
 const events = {
   renderingStarted:noop,
   renderingFinished:()=>{ window.__rendered=true; },
   renderingFailed:(opts,err)=>{ document.getElementById('err').textContent=err||'renderingFailed'; window.__rendered=true; }
 };
-const selectionIdBuilder=()=>{const b={withCategory:()=>b,withSeries:()=>b,withMeasure:()=>b,withTable:()=>b,createSelectionId:()=>({})};return b;};
+const selectionIdBuilder=()=>{let key=''; const b={
+  withCategory:(_category,index)=>{ key = String(index); return b; },
+  withSeries:()=>b,withMeasure:()=>b,withTable:()=>b,
+  createSelectionId:()=>selectionId(key)
+};return b;};
 const host = {
   createSelectionIdBuilder:selectionIdBuilder,
   createSelectionManager:()=>selectionManager,
   colorPalette, tooltipService, eventService:events,
-  locale:'en-US', fetchMoreData:()=>false, persistProperties:noop, applyJsonFilter:noop,
+  get locale(){ return window.__scenarioConfig?.locale || 'en-US'; },
+  fetchMoreData:()=>false, persistProperties:noop, applyJsonFilter:noop,
   createLocalizationManager:()=>({getDisplayName:(k)=>k}),
   displayWarningIcon:noop, telemetry:{trace:noop},
   hostCapabilities:{allowInteractions:true}, instanceId:'histogram-plus',
   refreshHostData:noop, switchFocusModeState:noop, isPaperVisualEnabled:()=>false
 };
 
-// Sample data: 150 normally-distributed values (mean≈50, sd≈10)
 const rawValues = [
   42.3,55.1,48.7,61.2,38.9,52.4,45.6,58.3,50.1,47.8,
   63.5,41.2,53.9,49.0,56.7,44.3,60.1,46.5,51.8,57.2,
@@ -61,50 +83,171 @@ const rawValues = [
   45.4,63.3,50.0,56.5,41.1,59.2,47.0,54.2,43.9,62.0
 ];
 
+const scenarios = {
+  default: {
+    values: rawValues,
+    objects: {
+      normalCurve:{ show:true },
+      specLimits:{ show:true, lsl:42, usl:60, showLabels:true, showTarget:true, target:51, showCpk:true, decimals:3 },
+      referenceLines:{ showMean:true, showMedian:true, showSd:true, sdCount:2 },
+      bars:{ gap:14 },
+      xAxis:{ title:'Value', numberFormat:'.1f' },
+      yAxis:{ title:'Count', numberFormat:',.0f' }
+    }
+  },
+  tooltip: {
+    values: [1,2,3,4,5],
+    freq: [1,2,4,2,1],
+    objects: {
+      bins:{ mode:'count', count:4 },
+      xAxis:{ numberFormat:'.1f' },
+      yAxis:{ numberFormat:',.0f' }
+    },
+    tooltip: true
+  },
+  highContrast: {
+    values: [1,2,3,4,5],
+    freq: [1,2,4,2,1],
+    highContrast: true,
+    hcForeground: '#ffff00',
+    hcBackground: '#000000',
+    objects: {
+      bins:{ mode:'count', count:4 },
+      normalCurve:{ show:true },
+      referenceLines:{ showMean:true },
+      specLimits:{ show:true, lsl:1, usl:5, showCpk:true }
+    }
+  },
+  barStyle: {
+    values: [1,2,3,4,5],
+    objects: {
+      bins:{ mode:'count', count:4 },
+      bars:{ fill:{ solid:{ color:'#123456' } }, stroke:{ solid:{ color:'#654321' } }, fillOpacity:55 }
+    }
+  },
+  toggleOff: {
+    values: rawValues,
+    objects: {
+      normalCurve:{ show:false },
+      specLimits:{ show:true, lsl:42, usl:60, showLabels:false, showTarget:false, target:51, showCpk:false },
+      referenceLines:{ showMean:false, showMedian:false, showSd:false }
+    }
+  },
+  resize: {
+    values: [1,2,3,4,5],
+    freq: [1,2,4,2,1],
+    objects: { bins:{ mode:'count', count:4 } }
+  },
+  nlLocale: {
+    values: [1.1,1.2,2.1,2.2,3.1],
+    locale: 'nl-NL',
+    objects: { bins:{ mode:'count', count:3 }, xAxis:{ numberFormat:'.1f' }, yAxis:{ numberFormat:',.0f' } }
+  },
+  invalidConfig: {
+    values: [1,2,3,4,5],
+    objects: {
+      bins:{ mode:'width', width:0, count:0 },
+      specLimits:{ show:true, lsl:5, usl:1, showTarget:true, target:99, showCpk:true },
+      xAxis:{ customRange:true, min:1, max:5 }
+    }
+  },
+  invalidValues: {
+    values: [1, NaN, 2, Infinity, -Infinity, 3, null, undefined, 'not numeric'],
+    objects: { bins:{ mode:'count', count:3 } }
+  },
+  frequency: {
+    values: [1,2,3,4,5],
+    freq: [1,2,4,2,1],
+    objects: { bins:{ mode:'count', count:4 } }
+  },
+  highlight: {
+    values: [1,2,3,4,5],
+    freq: [2,4,6,4,2],
+    highlights: [0,2,3,1,0],
+    objects: { bins:{ mode:'count', count:4 } }
+  },
+  boundary: {
+    values: [40,49.999,50,59.999,60,69.999,70,80,90],
+    objects: { xAxis:{ customRange:true, min:40, max:90 }, bins:{ mode:'width', width:10 } }
+  },
+  normalSymmetry: {
+    values: [40,42,44,46,48,50,52,54,56,58,60],
+    objects: { normalCurve:{ show:true }, xAxis:{ customRange:true, min:40, max:60 }, bins:{ mode:'width', width:5 } }
+  },
+  medianEven: {
+    values: [1,2,3,4],
+    objects: { referenceLines:{ showMedian:true }, xAxis:{ customRange:true, min:1, max:4 }, yAxis:{ title:'' }, bins:{ mode:'count', count:3 } }
+  },
+  customRange: {
+    values: rawValues,
+    objects: { xAxis:{ customRange:true, min:45, max:55, title:'Value' }, bins:{ mode:'width', width:2 } }
+  },
+  noValuesInRange: {
+    values: [1,2,3],
+    objects: { xAxis:{ customRange:true, min:10, max:20 } }
+  },
+  allNull: {
+    values: [null, undefined, 'not numeric'],
+    objects: {}
+  },
+  single: {
+    values: [7],
+    objects: { normalCurve:{ show:true }, specLimits:{ show:true, lsl:6, usl:8, showCpk:true } }
+  },
+  negative: {
+    values: [-8,-5,-4,-1,0,2,4,7],
+    objects: { bins:{ mode:'count', count:5 }, referenceLines:{ showMean:true } }
+  },
+  noData: {
+    noData: true,
+    values: []
+  }
+};
+
+const params = new URLSearchParams(location.search);
+const scenarioName = params.get('scenario') || 'default';
+const scenario = scenarios[scenarioName] || scenarios.default;
+const hostW = Number(params.get('w')) || 660;
+const hostH = Number(params.get('h')) || 440;
+document.getElementById('host').style.width = `${hostW}px`;
+document.getElementById('host').style.height = `${hostH}px`;
+window.__scenario = scenarioName;
+window.__scenarioConfig = scenario;
+
 const colMeta = {
   displayName:'Values', queryName:'values',
   roles:{ values:true },
   type:{ numeric:true },
   index:0
 };
-
-// Edge-case test override: set TEST_VALUES to an array (or [] for empty) to swap sample data.
-const TEST_VALUES = null;
-// Frequency test: set TEST_FREQ to a parallel array to simulate Power BI's
-// distinct-values + Count-measure delivery (the fidelity path).
-const TEST_FREQ = null;
-const data = TEST_VALUES || rawValues;
-
 const freqMeta = {
   displayName:'Frequency', queryName:'frequency',
   roles:{ frequency:true }, type:{ numeric:true }, index:1, isMeasure:true
 };
 
-// categorical dataView — values as categories (Grouping role)
-// objects: enable paid overlays for visual verification in harness
-const dataView = {
-  metadata:{
-    columns: TEST_FREQ ? [colMeta, freqMeta] : [colMeta],
-    objects:{
-      normalCurve:{ show:true },
-      specLimits:{ show:true, lsl:42, usl:60, showCpk:true }
+function dataViewFor(s) {
+  return {
+    metadata:{
+      columns: s.freq ? [colMeta, freqMeta] : [colMeta],
+      objects: s.objects || {}
+    },
+    categorical:{
+      categories:[{
+        source: colMeta,
+        values: s.values,
+        identity: s.values.map((_,i)=>selectionId(String(i))),
+        identityFields:[]
+      }],
+      values: s.freq
+        ? Object.assign([{ source:freqMeta, values:s.freq, highlights:s.highlights }], { grouped:()=>[] })
+        : Object.assign([], { grouped:()=>[] })
     }
-  },
-  categorical:{
-    categories:[{
-      source: colMeta,
-      values: data,
-      identity: data.map((_,i)=>({key:String(i)})),
-      identityFields:[]
-    }],
-    values: TEST_FREQ
-      ? Object.assign([{ source:freqMeta, values:TEST_FREQ }], { grouped:()=>[] })
-      : Object.assign([], { grouped:()=>[] })
-  }
-};
+  };
+}
 
-window.powerbi = { visuals: { plugins: {} } };
-window.NO_DATA = false; // set true to simulate "no fields assigned" (dataViews undefined)
+window.powerbi = {
+  visuals: { plugins: {} }
+};
 </script>
 <script src="./visual.js"></script>
 <script>
@@ -113,11 +256,19 @@ try {
   const plugin = window.powerbi.visuals.plugins[guid];
   const el = document.getElementById('host');
   const visual = plugin.create({ element:el, host });
-  visual.update({
-    dataViews: window.NO_DATA ? undefined : [dataView],
-    viewport:{ width:660, height:440 },
-    type:2
-  });
+  window.__visual = visual;
+  window.__dataView = scenario.noData ? undefined : dataViewFor(scenario);
+  window.__updateVisual = (width = hostW, height = hostH) => {
+    window.__rendered = false;
+    document.getElementById('host').style.width = `${width}px`;
+    document.getElementById('host').style.height = `${height}px`;
+    visual.update({
+      dataViews: window.__dataView ? [window.__dataView] : undefined,
+      viewport:{ width, height },
+      type:2
+    });
+  };
+  window.__updateVisual(hostW, hostH);
 } catch(e) {
   document.getElementById('err').textContent = e.stack || e.message;
   window.__rendered = true;

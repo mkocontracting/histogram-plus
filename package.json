@@ -1,10 +1,14 @@
 {
   "name": "histogram-plus",
   "description": "Histogram+ — manual bin control, normal curve overlay, LSL/USL spec limits, Cp/Cpk",
-  "version": "1.0.0.0",
+  "version": "1.0.0.20",
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "https://github.com/mkocontracting/histogram-plus.git"
+  },
+  "homepage": "https://github.com/mkocontracting/histogram-plus",
+  "bugs": {
+    "url": "https://github.com/mkocontracting/histogram-plus/issues"
   },
   "license": "MIT",
   "scripts": {
@@ -12,6 +16,7 @@
     "start": "pbiviz start",
     "build": "pbiviz package",
     "shot": "node harness/shot.js",
+    "verify": "node harness/verify.js",
     "lint": "npx eslint .",
     "audit": "npm audit",
     "cert": "pbiviz package --certification-audit"

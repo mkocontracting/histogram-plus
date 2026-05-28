@@ -1,16 +1,20 @@
 {
     "dataRoles": [
         {
-            "displayName": "Values",
+            "displayName": "Values (numeric)",
+            "displayNameKey": "Role_Values_DisplayName",
             "name": "values",
             "kind": "Grouping",
-            "description": "Numeric column to build the histogram from. Power BI returns distinct values; for data with repeats add the same column to Frequency as a Count."
+            "description": "Drag a numeric column here. For repeated values, also add the same column to Frequency as Count.",
+            "descriptionKey": "Role_Values_Description"
         },
         {
-            "displayName": "Frequency",
+            "displayName": "Frequency (Count)",
+            "displayNameKey": "Role_Frequency_DisplayName",
             "name": "frequency",
             "kind": "Measure",
-            "description": "Optional. Count (or weight) per value. Drag your value column here set to Count to histogram data with repeated values. Leave empty for continuous data."
+            "description": "Optional. Use Count of the Values column when repeated values should be counted. Leave empty for continuous data.",
+            "descriptionKey": "Role_Frequency_Description"
         }
     ],
     "objects": {
@@ -31,7 +35,8 @@
             "properties": {
                 "fill":        { "type": { "fill": { "solid": { "color": true } } } },
                 "fillOpacity": { "type": { "numeric": true } },
-                "stroke":      { "type": { "fill": { "solid": { "color": true } } } }
+                "stroke":      { "type": { "fill": { "solid": { "color": true } } } },
+                "gap":         { "type": { "numeric": true } }
             }
         },
         "normalCurve": {
@@ -47,12 +52,31 @@
                 "lsl":     { "type": { "numeric": true } },
                 "usl":     { "type": { "numeric": true } },
                 "color":   { "type": { "fill": { "solid": { "color": true } } } },
-                "showCpk": { "type": { "bool": true } }
+                "showLabels": { "type": { "bool": true } },
+                "showTarget": { "type": { "bool": true } },
+                "target":  { "type": { "numeric": true } },
+                "showCpk": { "type": { "bool": true } },
+                "decimals": { "type": { "numeric": true } }
+            }
+        },
+        "referenceLines": {
+            "properties": {
+                "showMean":   { "type": { "bool": true } },
+                "showMedian": { "type": { "bool": true } },
+                "showSd":     { "type": { "bool": true } },
+                "sdCount":    { "type": { "numeric": true } },
+                "color":      { "type": { "fill": { "solid": { "color": true } } } },
+                "strokeWidth": { "type": { "numeric": true } }
             }
         },
         "xAxis": {
             "properties": {
                 "show":       { "type": { "bool": true } },
+                "customRange": { "type": { "bool": true } },
+                "min":        { "type": { "numeric": true } },
+                "max":        { "type": { "numeric": true } },
+                "title":      { "type": { "text": true } },
+                "numberFormat": { "type": { "text": true } },
                 "labelColor": { "type": { "fill": { "solid": { "color": true } } } },
                 "fontSize":   { "type": { "formatting": { "fontSize": true } } }
             }
@@ -60,6 +84,8 @@
         "yAxis": {
             "properties": {
                 "show":       { "type": { "bool": true } },
+                "title":      { "type": { "text": true } },
+                "numberFormat": { "type": { "text": true } },
                 "labelColor": { "type": { "fill": { "solid": { "color": true } } } },
                 "fontSize":   { "type": { "formatting": { "fontSize": true } } }
             }
@@ -83,7 +109,18 @@
             }
         }
     ],
-    "privileges": [],
+    "tooltips": {
+        "supportedTypes": {
+            "default": true,
+            "canvas": true
+        },
+        "roles": ["values", "frequency"],
+        "supportEnhancedTooltips": true
+    },
+    "supportsKeyboardFocus": true,
+    "supportsHighlight": true,
+    "supportsMultiVisualSelection": true,
     "supportsLandingPage": true,
-    "supportsEmptyDataView": true
+    "supportsEmptyDataView": true,
+    "privileges": []
 }

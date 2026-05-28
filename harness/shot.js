@@ -11,13 +11,18 @@ const visualName = path.basename(projectRoot);
   const dst = path.join(projectRoot, '.tmp', 'drop', 'vhost.html');
   fs.copyFileSync(src, dst);
 
+  const hostW = Number(process.env.HOST_W) || 660;
+  const hostH = Number(process.env.HOST_H) || 440;
   const browser = await chromium.launch();
-  const page = await browser.newPage({ viewport: { width: 700, height: 480 } });
+  const page = await browser.newPage({ viewport: { width: hostW + 40, height: hostH + 40 } });
   page.on('console', m => console.log('PAGE:', m.type(), m.text()));
   page.on('pageerror', e => console.log('PAGEERROR:', e.message));
-  await page.goto('file://' + dst);
+  const scenario = process.env.SCENARIO || 'default';
+  await page.goto('file://' + dst + '?scenario=' + encodeURIComponent(scenario) + `&w=${hostW}&h=${hostH}`);
   await page.waitForFunction('window.__rendered === true', { timeout: 10000 }).catch(() => {});
-  const out = path.join(projectRoot, 'harness', 'screenshot.png');
+  await page.waitForTimeout(50);
+  const sizeSuffix = hostW === 660 && hostH === 440 ? '' : `-${hostW}x${hostH}`;
+  const out = path.join(projectRoot, 'harness', scenario === 'default' && !sizeSuffix ? 'screenshot.png' : `screenshot-${scenario}${sizeSuffix}.png`);
   await page.screenshot({ path: out });
   const err = await page.$eval('#err', el => el.textContent).catch(() => '');
   if (err) console.log('ERROR:', err);
@@ -27,5 +32,6 @@ const visualName = path.basename(projectRoot);
   const mirror = '/mnt/c/Users/MKorb/OneDrive/01 Travel and work/01 MKO Contracting/04 AI stuff/AIprojects/projects/powerbi visuals/visuals/histogram-plus/screenshot.png';
   try { fs.copyFileSync(out, mirror); } catch(_) {}
 
+  console.log('scenario:', scenario);
   console.log('screenshot:', out);
 })().catch(e => { console.error('FAIL:', e.message); process.exit(1); });

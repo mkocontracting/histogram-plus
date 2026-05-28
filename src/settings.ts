@@ -53,12 +53,18 @@ class BarsCard extends Card {
         value: { value: "#ffffff" }
     });
 
+    gap = new formattingSettings.NumUpDown({
+        name: "gap", displayName: "Gap (%)",
+        value: 8, options: { minValue: { value: 0, type: powerbi.visuals.ValidatorType.Min },
+                              maxValue: { value: 80, type: powerbi.visuals.ValidatorType.Max } }
+    });
+
     name: string = "bars";
     displayName: string = "Bars";
-    slices: Slice[] = [this.fill, this.fillOpacity, this.stroke];
+    slices: Slice[] = [this.fill, this.fillOpacity, this.stroke, this.gap];
 }
 
-// ── Normal curve (PAID) ───────────────────────────────────────────────────────
+// ── Normal curve ──────────────────────────────────────────────────────────────
 class NormalCurveCard extends Card {
     show = new formattingSettings.ToggleSwitch({
         name: "show", displayName: undefined, value: false
@@ -81,7 +87,7 @@ class NormalCurveCard extends Card {
     slices: Slice[] = [this.color, this.strokeWidth];
 }
 
-// ── Spec limits (PAID) ────────────────────────────────────────────────────────
+// ── Spec limits ───────────────────────────────────────────────────────────────
 class SpecLimitsCard extends Card {
     show = new formattingSettings.ToggleSwitch({
         name: "show", displayName: undefined, value: false
@@ -101,13 +107,67 @@ class SpecLimitsCard extends Card {
         value: { value: "#d64550" }
     });
 
+    showLabels = new formattingSettings.ToggleSwitch({
+        name: "showLabels", displayName: "Show labels", value: true
+    });
+
+    showTarget = new formattingSettings.ToggleSwitch({
+        name: "showTarget", displayName: "Show target", value: false
+    });
+
+    target = new formattingSettings.NumUpDown({
+        name: "target", displayName: "Target", value: 50
+    });
+
     showCpk = new formattingSettings.ToggleSwitch({
         name: "showCpk", displayName: "Show Cp / Cpk", value: true
     });
 
+    decimals = new formattingSettings.NumUpDown({
+        name: "decimals", displayName: "Decimals",
+        value: 2, options: { minValue: { value: 0, type: powerbi.visuals.ValidatorType.Min },
+                              maxValue: { value: 6, type: powerbi.visuals.ValidatorType.Max } }
+    });
+
     name: string = "specLimits";
-    displayName: string = "Spec limits (LSL / USL)";
-    slices: Slice[] = [this.lsl, this.usl, this.color, this.showCpk];
+    displayName: string = "Spec limits";
+    slices: Slice[] = [this.lsl, this.usl, this.color, this.showLabels, this.showTarget, this.target, this.showCpk, this.decimals];
+}
+
+// ── Reference lines ──────────────────────────────────────────────────────────
+class ReferenceLinesCard extends Card {
+    showMean = new formattingSettings.ToggleSwitch({
+        name: "showMean", displayName: "Mean", value: false
+    });
+
+    showMedian = new formattingSettings.ToggleSwitch({
+        name: "showMedian", displayName: "Median", value: false
+    });
+
+    showSd = new formattingSettings.ToggleSwitch({
+        name: "showSd", displayName: "Mean ±1 SD", value: false
+    });
+
+    sdCount = new formattingSettings.NumUpDown({
+        name: "sdCount", displayName: "SD bands",
+        value: 1, options: { minValue: { value: 1, type: powerbi.visuals.ValidatorType.Min },
+                              maxValue: { value: 3, type: powerbi.visuals.ValidatorType.Max } }
+    });
+
+    color = new formattingSettings.ColorPicker({
+        name: "color", displayName: "Line color",
+        value: { value: "#5b5fc7" }
+    });
+
+    strokeWidth = new formattingSettings.NumUpDown({
+        name: "strokeWidth", displayName: "Stroke width",
+        value: 1, options: { minValue: { value: 1, type: powerbi.visuals.ValidatorType.Min },
+                              maxValue: { value: 10, type: powerbi.visuals.ValidatorType.Max } }
+    });
+
+    name: string = "referenceLines";
+    displayName: string = "Reference lines";
+    slices: Slice[] = [this.showMean, this.showMedian, this.showSd, this.sdCount, this.color, this.strokeWidth];
 }
 
 // ── X Axis ────────────────────────────────────────────────────────────────────
@@ -116,6 +176,26 @@ class XAxisCard extends Card {
         name: "show", displayName: undefined, value: true
     });
     topLevelSlice = this.show;
+
+    customRange = new formattingSettings.ToggleSwitch({
+        name: "customRange", displayName: "Custom range", value: false
+    });
+
+    min = new formattingSettings.NumUpDown({
+        name: "min", displayName: "Minimum", value: 0
+    });
+
+    max = new formattingSettings.NumUpDown({
+        name: "max", displayName: "Maximum", value: 100
+    });
+
+    title = new formattingSettings.TextInput({
+        name: "title", displayName: "Title", value: "", placeholder: "Values"
+    });
+
+    numberFormat = new formattingSettings.TextInput({
+        name: "numberFormat", displayName: "Number format", value: "", placeholder: ".2f"
+    });
 
     labelColor = new formattingSettings.ColorPicker({
         name: "labelColor", displayName: "Label color",
@@ -130,7 +210,7 @@ class XAxisCard extends Card {
 
     name: string = "xAxis";
     displayName: string = "X axis";
-    slices: Slice[] = [this.labelColor, this.fontSize];
+    slices: Slice[] = [this.customRange, this.min, this.max, this.title, this.numberFormat, this.labelColor, this.fontSize];
 }
 
 // ── Y Axis ────────────────────────────────────────────────────────────────────
@@ -139,6 +219,14 @@ class YAxisCard extends Card {
         name: "show", displayName: undefined, value: true
     });
     topLevelSlice = this.show;
+
+    title = new formattingSettings.TextInput({
+        name: "title", displayName: "Title", value: "Count", placeholder: "Count"
+    });
+
+    numberFormat = new formattingSettings.TextInput({
+        name: "numberFormat", displayName: "Number format", value: ",.0f", placeholder: ",.0f"
+    });
 
     labelColor = new formattingSettings.ColorPicker({
         name: "labelColor", displayName: "Label color",
@@ -153,7 +241,7 @@ class YAxisCard extends Card {
 
     name: string = "yAxis";
     displayName: string = "Y axis";
-    slices: Slice[] = [this.labelColor, this.fontSize];
+    slices: Slice[] = [this.title, this.numberFormat, this.labelColor, this.fontSize];
 }
 
 // ── Model ─────────────────────────────────────────────────────────────────────
@@ -162,8 +250,9 @@ export class VisualFormattingSettingsModel extends Model {
     bars        = new BarsCard();
     normalCurve = new NormalCurveCard();
     specLimits  = new SpecLimitsCard();
+    referenceLines = new ReferenceLinesCard();
     xAxis       = new XAxisCard();
     yAxis       = new YAxisCard();
 
-    cards: Card[] = [this.bins, this.bars, this.normalCurve, this.specLimits, this.xAxis, this.yAxis];
+    cards: Card[] = [this.bins, this.bars, this.normalCurve, this.specLimits, this.referenceLines, this.xAxis, this.yAxis];
 }
